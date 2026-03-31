@@ -10,6 +10,8 @@
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
   <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700&family=Scheherazade:wght@400;700&family=Naskh+Professional:wght@400;600&family=Nastaliq:wght@400&display=swap" rel="stylesheet">
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="theme-navy">
@@ -30,7 +32,10 @@
           <i class="bi bi-list"></i>
         </button>
         <div class="header-brand">
-          <h4>{{ isArabic ? 'القرآن الكريم' : 'Holy Quran' }}</h4>
+          <div class="brand-text">
+            <h4>{{ isArabic ? 'القرآن الكريم' : 'Holy Quran' }}</h4>
+            <span class="header-welcome">﴿ اقْرَأْ بِاسْمِ رَبِّكَ الَّذِي خَلَقَ ﴾</span>
+          </div>
         </div>
         <div class="header-actions">
           <button class="btn-icon" @click="toggleTheme">
@@ -180,71 +185,83 @@
         </div>
       </main>
 
-      <aside class="tafsir-panel" v-if="showTafsir">
-        <div class="tafsir-panel-header">
-          <div class="tafsir-panel-title">
-            <i class="bi bi-journal-text"></i>
-            <span>{{ isArabic ? 'التفسير' : 'Tafsir' }}</span>
-            <span class="tafsir-surah-name" v-if="currentSurahName">{{ currentSurahName }}</span>
+      <div class="tafsir-modal" v-if="showTafsir" ref="tafsirModal">
+        <div class="tafsir-modal-overlay" @click="showTafsir = false"></div>
+        <div class="tafsir-modal-container">
+          <div class="tafsir-modal-header">
+            <div class="tafsir-modal-title">
+              <i class="bi bi-journal-text"></i>
+              <span>{{ isArabic ? 'التفسير' : 'Tafsir' }}</span>
+              <span class="tafsir-modal-surah" v-if="currentSurahName">{{ currentSurahName }}</span>
+            </div>
+            <button class="tafsir-modal-close" @click="showTafsir = false">
+              <i class="bi bi-x-lg"></i>
+            </button>
           </div>
-          <div class="tafsir-panel-actions">
-            <select class="form-select tafsir-select-sm" v-model="selectedTafsir" @change="loadTafsir">
+          
+          <div class="tafsir-modal-controls">
+            <select class="tafsir-select" v-model="selectedTafsir" @change="loadTafsir">
               <option value="ar.muyassar">التفسير الميسر</option>
               <option value="ar.jalalayn">تفسير الجلالين</option>
               <option value="ar.qurtubi">تفسير القرطبي</option>
               <option value="ar.baghawi">تفسير البغوي</option>
               <option value="ar.ibnkathir">تفسير ابن كثير</option>
             </select>
-            <button class="close-tafsir-panel" @click="showTafsir = false">
-              <i class="bi bi-x-lg"></i>
-            </button>
           </div>
-        </div>
-        <div class="tafsir-panel-content" v-if="tafsirData.length > 0">
-          <div class="surah-info-card" v-if="surahInfo">
-            <div class="info-card-header">
-              <i class="bi bi-info-circle-fill"></i>
-              <span>{{ isArabic ? 'معلومات السورة' : 'Surah Information' }}</span>
-            </div>
-            <div class="info-card-body">
-              <div class="info-row">
-                <span class="info-label">{{ isArabic ? 'مكان النزول' : 'Place of Revelation' }}</span>
-                <span class="info-value">
-                  <i class="bi bi-geo-alt-fill" :class="surahInfo.revelationType === 'meccan' ? 'makki' : 'madani'"></i>
-                  {{ surahInfo.revelationType === 'meccan' ? (isArabic ? 'مكة المكرمة' : 'Makkah') : (isArabic ? 'المدينة المنورة' : 'Madinah') }}
-                </span>
+
+          <div class="tafsir-modal-body" v-if="tafsirData.length > 0">
+            <div class="tafsir-info-card" v-if="surahInfo">
+              <div class="tafsir-info-header">
+                <i class="bi bi-info-circle-fill"></i>
+                <span>{{ isArabic ? 'معلومات السورة' : 'Surah Info' }}</span>
               </div>
-              <div class="info-row">
-                <span class="info-label">{{ isArabic ? 'ترتيب النزول' : 'Order of Revelation' }}</span>
-                <span class="info-value">{{ surahInfo.orderOfRevelation }}</span>
-              </div>
-              <div class="info-row">
-                <span class="info-label">{{ isArabic ? 'عدد الآيات' : 'Number of Ayahs' }}</span>
-                <span class="info-value">{{ surahInfo.ayahsCount }}</span>
+              <div class="tafsir-info-content">
+                <div class="tafsir-info-row">
+                  <span class="tafsir-info-label">{{ isArabic ? 'مكان النزول' : 'Place' }}</span>
+                  <span class="tafsir-info-value">
+                    <i class="bi bi-geo-alt-fill" :class="surahInfo.revelationType === 'meccan' ? 'makki' : 'madani'"></i>
+                    {{ surahInfo.revelationType === 'meccan' ? (isArabic ? 'مكة' : 'Makkah') : (isArabic ? 'المدينة' : 'Madinah') }}
+                  </span>
+                </div>
+                <div class="tafsir-info-row">
+                  <span class="tafsir-info-label">{{ isArabic ? 'الترتيب' : 'Order' }}</span>
+                  <span class="tafsir-info-value">{{ surahInfo.orderOfRevelation }}</span>
+                </div>
+                <div class="tafsir-info-row">
+                  <span class="tafsir-info-label">{{ isArabic ? 'الآيات' : 'Ayahs' }}</span>
+                  <span class="tafsir-info-value">{{ surahInfo.ayahsCount }}</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div v-for="item in tafsirData" :key="item.numberInSurah" class="tafsir-item" :class="{ 'tafsir-bismillah': item.isBismillah }">
-            <div class="tafsir-item-ayah">
-              <span class="tafsir-item-num" v-if="!item.isBismillah">{{ item.numberInSurah }}</span>
-              <span class="tafsir-item-num bismillah-num" v-else><i class="bi bi-star-fill"></i></span>
-              <span class="tafsir-item-text">{{ item.ayahText }}</span>
+
+            <div class="tafsir-list">
+              <div v-for="(item, index) in tafsirData" :key="item.numberInSurah" 
+                   class="tafsir-card" 
+                   :class="{ 'tafsir-card-bismillah': item.isBismillah }"
+                   :ref="el => { if(el) tafsirCards[index] = el }">
+                <div class="tafsir-card-ayah">
+                  <span class="tafsir-card-num" v-if="!item.isBismillah">{{ item.numberInSurah }}</span>
+                  <span class="tafsir-card-num bismillah" v-else><i class="bi bi-star-fill"></i></span>
+                  <span class="tafsir-card-text">{{ item.ayahText }}</span>
+                </div>
+                <div class="tafsir-card-body">
+                  <div class="tafsir-card-source">{{ tafsirName }}</div>
+                  <div class="tafsir-card-content" v-html="item.text"></div>
+                </div>
+              </div>
             </div>
-            <div class="tafsir-item-body">
-              <div class="tafsir-item-source">{{ tafsirName }}</div>
-              <div class="tafsir-item-tafsir" v-html="item.text"></div>
-            </div>
+          </div>
+
+          <div v-else-if="tafsirLoading" class="tafsir-modal-loading">
+            <div class="tafsir-spinner"></div>
+            <p>{{ isArabic ? 'جاري التحميل...' : 'Loading...' }}</p>
+          </div>
+          <div v-else class="tafsir-modal-empty">
+            <i class="bi bi-journal-text"></i>
+            <p>{{ isArabic ? 'اختر سورة لعرض التفسير' : 'Select a surah' }}</p>
           </div>
         </div>
-        <div v-else-if="tafsirLoading" class="tafsir-panel-loading">
-          <div class="spinner-border" role="status"></div>
-          <p>{{ isArabic ? 'جاري تحميل التفسير...' : 'Loading tafsir...' }}</p>
-        </div>
-        <div v-else class="tafsir-panel-empty">
-          <i class="bi bi-journal-text tafsir-empty-icon"></i>
-          <p>{{ isArabic ? 'اختر سورة لعرض التفسير' : 'Select a surah to view tafsir' }}</p>
-        </div>
-      </aside>
+      </div>
     </div>
 
     <div class="controls-bar">
