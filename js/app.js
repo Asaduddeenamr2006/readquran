@@ -1,4 +1,4 @@
-const { createApp, ref, computed, onMounted } = Vue;
+const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
 
 createApp({
   setup() {
@@ -15,6 +15,43 @@ createApp({
     const pages = ref([]);
     const toasts = ref([]);
     const fontSize = ref(28);
+    const lineHeight = ref(2.6);
+    const textAlign = ref('center');
+    const readingTheme = ref('light');
+    const readingControlsVisible = ref(false);
+    const showReadingSettings = ref(false);
+    const pageTransition = ref('slide-left');
+    const contentArea = ref(null);
+    const readingArea = ref(null);
+
+    let touchStartX = 0;
+    let touchStartY = 0;
+    let touchStartTime = 0;
+    let currentAudio = null;
+    let controlsTimeout = null;
+    let lastTapTime = 0;
+
+    const surahPageCount = {
+      1: 1, 2: 49, 3: 35, 4: 38, 5: 30, 6: 27, 7: 27, 8: 10, 9: 22,
+      10: 16, 11: 17, 12: 15, 13: 9, 14: 8, 15: 7, 16: 16, 17: 16, 18: 12,
+      19: 11, 20: 12, 21: 11, 22: 10, 23: 9, 24: 9, 25: 9, 26: 9, 27: 8,
+      28: 9, 29: 9, 30: 9, 31: 5, 32: 4, 33: 9, 34: 6, 35: 6, 36: 6,
+      37: 6, 38: 6, 39: 8, 40: 8, 41: 6, 42: 7, 43: 7, 44: 4, 45: 5,
+      46: 6, 47: 5, 48: 5, 49: 4, 50: 5, 51: 3, 52: 4, 53: 3, 54: 4,
+      55: 4, 56: 4, 57: 4, 58: 4, 59: 4, 60: 4, 61: 4, 62: 3, 63: 3,
+      64: 3, 65: 3, 66: 3, 67: 4, 68: 4, 69: 4, 70: 4, 71: 4, 72: 4,
+      73: 3, 74: 4, 75: 4, 76: 4, 77: 4, 78: 4, 79: 4, 80: 3, 81: 3,
+      82: 3, 83: 4, 84: 4, 85: 4, 86: 3, 87: 3, 88: 4, 89: 4, 90: 3,
+      91: 3, 92: 3, 93: 3, 94: 3, 95: 3, 96: 3, 97: 3, 98: 4, 99: 3,
+      100: 3, 101: 3, 102: 3, 103: 3, 104: 3, 105: 3, 106: 3, 107: 3, 108: 3,
+      109: 3, 110: 3, 111: 3, 112: 3, 113: 3, 114: 3
+    };
+
+    const currentSurahName = computed(() => {
+      if (!currentSurah.value || !surahs.value.length) return '';
+      const surah = surahs.value.find(s => s.number === currentSurah.value);
+      return surah ? surah.name : '';
+    });
 
     const filteredSurahs = computed(() => {
       if (!searchQuery.value) return surahs.value;
@@ -33,23 +70,54 @@ createApp({
       return ((currentPageIndex.value + 1) / totalPages.value) * 100;
     });
 
-    const surahPageCount = {
-      1: 1, 2: 49, 3: 35, 4: 38, 5: 30, 6: 27, 7: 27, 8: 10, 9: 22,
-      10: 16, 11: 17, 12: 15, 13: 9, 14: 8, 15: 7, 16: 16, 17: 16, 18: 12,
-      19: 11, 20: 12, 21: 11, 22: 10, 23: 9, 24: 9, 25: 9, 26: 9, 27: 8,
-      28: 9, 29: 9, 30: 9, 31: 5, 32: 4, 33: 9, 34: 6, 35: 6, 36: 6,
-      37: 6, 38: 6, 39: 8, 40: 8, 41: 6, 42: 7, 43: 7, 44: 4, 45: 5,
-      46: 6, 47: 5, 48: 5, 49: 4, 50: 5, 51: 3, 52: 4, 53: 3, 54: 4,
-      55: 4, 56: 4, 57: 4, 58: 4, 59: 4, 60: 4, 61: 4, 62: 3, 63: 3,
-      64: 3, 65: 3, 66: 3, 67: 4, 68: 4, 69: 4, 70: 4, 71: 4, 72: 4,
-      73: 3, 74: 4, 75: 4, 76: 4, 77: 4, 78: 4, 79: 4, 80: 3, 81: 3,
-      82: 3, 83: 4, 84: 4, 85: 4, 86: 3, 87: 3, 88: 4, 89: 4, 90: 3,
-      91: 3, 92: 3, 93: 3, 94: 3, 95: 3, 96: 3, 97: 3, 98: 4, 99: 3,
-      100: 3, 101: 3, 102: 3, 103: 3, 104: 3, 105: 3, 106: 3, 107: 3, 108: 3,
-      109: 3, 110: 3, 111: 3, 112: 3, 113: 3, 114: 3
+    const getSurahPageCount = (num) => surahPageCount[num] || 10;
+
+    const saveState = () => {
+      try {
+        const state = {
+          isDark: isDark.value,
+          isArabic: isArabic.value,
+          currentSurah: currentSurah.value,
+          currentPageIndex: currentPageIndex.value,
+          selectedReciter: selectedReciter.value,
+          fontSize: fontSize.value,
+          lineHeight: lineHeight.value,
+          textAlign: textAlign.value,
+          readingTheme: readingTheme.value
+        };
+        localStorage.setItem('quranAppState', JSON.stringify(state));
+      } catch (e) {
+        console.warn('Could not save state:', e);
+      }
     };
 
-    const getSurahPageCount = (num) => surahPageCount[num] || 10;
+    const loadState = () => {
+      try {
+        const saved = localStorage.getItem('quranAppState');
+        if (saved) {
+          const state = JSON.parse(saved);
+          isDark.value = state.isDark ?? false;
+          isArabic.value = state.isArabic ?? true;
+          currentSurah.value = state.currentSurah ?? null;
+          currentPageIndex.value = state.currentPageIndex ?? 0;
+          selectedReciter.value = state.selectedReciter ?? 'ar.alafasy';
+          fontSize.value = state.fontSize ?? 28;
+          lineHeight.value = state.lineHeight ?? 2.6;
+          textAlign.value = state.textAlign ?? 'center';
+          readingTheme.value = state.readingTheme ?? 'light';
+          
+          if (isDark.value) {
+            document.body.classList.remove('light-theme');
+            document.body.classList.add('dark-theme');
+          } else {
+            document.body.classList.remove('dark-theme');
+            document.body.classList.add('light-theme');
+          }
+        }
+      } catch (e) {
+        console.warn('Could not load state:', e);
+      }
+    };
 
     const showToast = (message, icon = 'bi bi-info-circle') => {
       const id = Date.now();
@@ -64,59 +132,175 @@ createApp({
       document.body.classList.remove('light-theme', 'dark-theme');
       document.body.classList.add(isDark.value ? 'dark-theme' : 'light-theme');
       const themeLabel = isDark.value 
-        ? (isArabic.value ? '🌙 الوضع الليلي' : '🌙 Night Mode') 
-        : (isArabic.value ? '☀️ الوضع النهاري' : '☀️ Day Mode');
+        ? (isArabic.value ? 'الوضع الليلي' : 'Night Mode') 
+        : (isArabic.value ? 'الوضع النهاري' : 'Day Mode');
       showToast(themeLabel, 'bi bi-palette');
+      saveState();
     };
 
     const toggleLang = () => {
       isArabic.value = !isArabic.value;
-      showToast(isArabic.value ? '🇸🇦 العربية' : '🇬🇧 English', 'bi bi-translate');
+      showToast(isArabic.value ? 'العربية' : 'English', 'bi bi-translate');
+      saveState();
     };
 
     const increaseFontSize = () => {
       if (fontSize.value < 60) {
-        fontSize.value += 4;
+        fontSize.value += 2;
+        saveState();
       }
     };
 
     const decreaseFontSize = () => {
       if (fontSize.value > 16) {
-        fontSize.value -= 4;
+        fontSize.value -= 2;
+        saveState();
       }
+    };
+
+    const increaseLineHeight = () => {
+      if (lineHeight.value < 3.2) {
+        lineHeight.value = Math.round((lineHeight.value + 0.2) * 10) / 10;
+        saveState();
+      }
+    };
+
+    const decreaseLineHeight = () => {
+      if (lineHeight.value > 1.8) {
+        lineHeight.value = Math.round((lineHeight.value - 0.2) * 10) / 10;
+        saveState();
+      }
+    };
+
+    const setReadingTheme = (theme) => {
+      readingTheme.value = theme;
+      if (theme === 'light') {
+        isDark.value = false;
+      } else if (theme === 'dark' || theme === 'night') {
+        isDark.value = true;
+      }
+      saveState();
+    };
+
+    const toggleReadingSettings = () => {
+      showReadingSettings.value = !showReadingSettings.value;
     };
 
     const toggleReadingMode = () => {
       isReadingMode.value = !isReadingMode.value;
       if (isReadingMode.value) {
-        showToast(isArabic.value ? '✨ وضع القراءة مفعل' : '✨ Reading Mode Active', 'bi bi-book');
+        readingControlsVisible.value = true;
+        showReadingSettings.value = false;
+        document.body.style.overflow = 'hidden';
+        resetControlsTimeout();
       } else {
-        showToast(isArabic.value ? '📖 تم الخروج من وضع القراءة' : '📖 Exited Reading Mode', 'bi bi-check-circle');
+        document.body.style.overflow = '';
+        clearTimeout(controlsTimeout);
       }
     };
 
     const exitReadingMode = () => {
       isReadingMode.value = false;
-      showToast(isArabic.value ? '📖 تم الخروج من وضع القراءة' : '📖 Exited Reading Mode', 'bi bi-check-circle');
+      showReadingSettings.value = false;
+      document.body.style.overflow = '';
+      clearTimeout(controlsTimeout);
+    };
+
+    const resetControlsTimeout = () => {
+      clearTimeout(controlsTimeout);
+      readingControlsVisible.value = true;
+      controlsTimeout = setTimeout(() => {
+        if (isReadingMode.value) {
+          readingControlsVisible.value = false;
+          showReadingSettings.value = false;
+        }
+      }, 4000);
+    };
+
+    const handleReadingTap = () => {
+      const now = Date.now();
+      if (now - lastTapTime < 300) return;
+      lastTapTime = now;
+      resetControlsTimeout();
+    };
+
+    const toggleSidebar = () => {
+      sidebarOpen.value = !sidebarOpen.value;
+      if (sidebarOpen.value) {
+        document.body.style.overflow = 'hidden';
+      } else {
+        document.body.style.overflow = '';
+      }
+    };
+
+    const closeSidebar = () => {
+      sidebarOpen.value = false;
+      document.body.style.overflow = '';
     };
 
     const prevPage = () => {
       if (currentPageIndex.value > 0) {
+        pageTransition.value = 'slide-right';
         currentPageIndex.value--;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        saveState();
+        resetControlsTimeout();
       }
     };
 
     const nextPage = () => {
       if (currentPageIndex.value < totalPages.value - 1) {
+        pageTransition.value = 'slide-left';
         currentPageIndex.value++;
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        saveState();
+        resetControlsTimeout();
       }
+    };
+
+    const handleTouchStart = (e) => {
+      touchStartX = e.touches[0].clientX;
+      touchStartY = e.touches[0].clientY;
+      touchStartTime = Date.now();
+    };
+
+    const handleTouchMove = (e) => {
+      if (!touchStartX || !touchStartY) return;
+    };
+
+    const handleTouchEnd = (e) => {
+      if (!touchStartX || !touchStartY) return;
+      
+      const touchEndX = e.changedTouches[0].clientX;
+      const touchEndY = e.changedTouches[0].clientY;
+      const deltaX = touchEndX - touchStartX;
+      const deltaY = touchEndY - touchStartY;
+      const deltaTime = Date.now() - touchStartTime;
+
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 500) {
+        const isRtl = document.documentElement.dir === 'rtl';
+        if (isRtl) {
+          if (deltaX > 0) {
+            nextPage();
+          } else {
+            prevPage();
+          }
+        } else {
+          if (deltaX < 0) {
+            nextPage();
+          } else {
+            prevPage();
+          }
+        }
+      }
+
+      touchStartX = 0;
+      touchStartY = 0;
+      touchStartTime = 0;
     };
 
     const loadSurahs = async () => {
       try {
         const res = await fetch('https://api.alquran.cloud/v1/surah');
+        if (!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
         surahs.value = data.data;
       } catch (error) {
@@ -130,31 +314,35 @@ createApp({
       currentSurah.value = num;
       currentPageIndex.value = 0;
       sidebarOpen.value = false;
+      document.body.style.overflow = '';
 
       try {
         const res = await fetch(`https://api.alquran.cloud/v1/surah/${num}`);
+        if (!res.ok) throw new Error('Network response was not ok');
         const data = await res.json();
         
         const ayahs = data.data.ayahs;
         const total = getSurahPageCount(num);
-        const ayahsPerPage = Math.ceil(ayahs.length / total);
+        const ayahsPerPage = Math.max(1, Math.ceil(ayahs.length / total));
         
         pages.value = [];
         
         for (let i = 0; i < ayahs.length; i += ayahsPerPage) {
           const chunk = ayahs.slice(i, Math.min(i + ayahsPerPage, ayahs.length));
           const text = chunk.map(a => 
-            `${a.text} <span class="ayah-number" onclick="playAyah(${a.numberInSurah})">۝ ${a.numberInSurah}</span>`
+            `${a.text} <span class="ayah-number" onclick="window.__playAyah(${a.numberInSurah})">۝ ${a.numberInSurah}</span>`
           ).join(' ');
           
           pages.value.push({
             text,
             startAyah: chunk[0].numberInSurah,
-            endAyah: chunk[chunk.length - 1].numberInSurah
+            endAyah: chunk[chunk.length - 1].numberInSurah,
+            isFirstPage: i === 0
           });
         }
 
         window.scrollTo({ top: 0, behavior: 'smooth' });
+        saveState();
       } catch (error) {
         console.error('Error loading surah:', error);
         showToast(isArabic.value ? 'خطأ في تحميل السورة' : 'Error loading surah', 'bi bi-exclamation-triangle');
@@ -162,8 +350,6 @@ createApp({
         loading.value = false;
       }
     };
-
-    let currentAudio = null;
 
     const playCurrentAyah = () => {
       if (!currentSurah.value) return;
@@ -175,6 +361,7 @@ createApp({
     const stopAudio = () => {
       if (currentAudio) {
         currentAudio.pause();
+        currentAudio.currentTime = 0;
         currentAudio = null;
       }
     };
@@ -186,13 +373,17 @@ createApp({
       currentAudio.play().catch(e => console.log('Play error:', e));
     };
 
-    window.playAyah = playAyah;
+    window.__playAyah = playAyah;
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') nextPage();
       else if (e.key === 'ArrowRight') prevPage();
       else if (e.key === 'r' || e.key === 'R') toggleReadingMode();
-      else if (e.key === 'Escape' && isReadingMode.value) exitReadingMode();
+      else if (e.key === 'Escape') {
+        if (isReadingMode.value) exitReadingMode();
+        if (sidebarOpen.value) closeSidebar();
+        if (showReadingSettings.value) showReadingSettings.value = false;
+      }
       else if (isReadingMode.value) {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
           e.preventDefault();
@@ -203,11 +394,17 @@ createApp({
           decreaseFontSize();
         }
       }
+      resetControlsTimeout();
     });
 
-    onMounted(() => {
-      loadSurahs();
-      setTimeout(() => loadSurah(1), 500);
+    onMounted(async () => {
+      loadState();
+      await loadSurahs();
+      if (currentSurah.value) {
+        await loadSurah(currentSurah.value);
+      } else {
+        await loadSurah(1);
+      }
     });
 
     return {
@@ -224,6 +421,15 @@ createApp({
       pages,
       toasts,
       fontSize,
+      lineHeight,
+      textAlign,
+      readingTheme,
+      readingControlsVisible,
+      showReadingSettings,
+      pageTransition,
+      contentArea,
+      readingArea,
+      currentSurahName,
       filteredSurahs,
       totalPages,
       progressPercent,
@@ -231,13 +437,24 @@ createApp({
       toggleLang,
       toggleReadingMode,
       exitReadingMode,
+      toggleSidebar,
+      closeSidebar,
       prevPage,
       nextPage,
       loadSurah,
       playCurrentAyah,
       stopAudio,
       increaseFontSize,
-      decreaseFontSize
+      decreaseFontSize,
+      increaseLineHeight,
+      decreaseLineHeight,
+      setReadingTheme,
+      toggleReadingSettings,
+      handleTouchStart,
+      handleTouchMove,
+      handleTouchEnd,
+      handleReadingTap,
+      resetControlsTimeout
     };
   }
 }).mount('#app');
