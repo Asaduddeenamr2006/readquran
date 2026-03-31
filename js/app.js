@@ -99,8 +99,7 @@ createApp({
     const tafsirData = ref([]);
     const tafsirLoading = ref(false);
     const surahInfo = ref(null);
-    const showReciterPanel = ref(false);
-    const showModePanel = ref(false);
+    const showSettingsPanel = ref(false);
     const playMode = ref('continue');
 
     let touchStartX = 0, touchStartY = 0, touchStartTime = 0;
@@ -135,20 +134,6 @@ createApp({
 
     const totalPages = computed(() => pages.value.length);
     const tafsirName = computed(() => TAFSIR_NAMES[selectedTafsir.value] || '');
-
-    const playModeIcon = computed(() => {
-      const icons = { repeat: 'bi bi-repeat', continue: 'bi bi-arrow-right-circle', once: 'bi bi-play-circle' };
-      return icons[playMode.value] || 'bi bi-play-circle';
-    });
-
-    const playModeLabel = computed(() => {
-      const labels = {
-        repeat: isArabic.value ? 'تكرار' : 'Repeat',
-        continue: isArabic.value ? 'استمرار' : 'Continue',
-        once: isArabic.value ? 'مرة واحدة' : 'Once'
-      };
-      return labels[playMode.value] || labels.continue;
-    });
 
     const padNum = (n, len = 3) => String(n).padStart(len, '0');
 
@@ -614,8 +599,7 @@ createApp({
       else if (e.key === 'ArrowRight') prevPage();
       else if (e.key === 'Escape') {
         if (sidebarOpen.value) closeSidebar();
-        if (showReciterPanel.value) showReciterPanel.value = false;
-        if (showModePanel.value) showModePanel.value = false;
+        if (showSettingsPanel.value) showSettingsPanel.value = false;
       }
       else if (e.key === ' ') { e.preventDefault(); togglePlayPause(); }
     });
@@ -645,8 +629,7 @@ createApp({
       showColorPicker, showFontPicker, selectedReciter, currentSurah, currentPageIndex,
       surahs, pages, allAyahs, toasts, fontSize,
       playingAyahNumber, isPlaying, showTafsir, selectedTafsir, tafsirData,
-      tafsirLoading, surahInfo, showReciterPanel, showModePanel, playMode,
-      playModeIcon, playModeLabel,
+      tafsirLoading, surahInfo, showSettingsPanel, playMode, RECITERS,
       currentReciterName, currentSurahName, filteredSurahs,
       totalPages, tafsirName,
       toggleTheme, toggleLang, setColor, setFont, setPlayMode,

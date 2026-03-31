@@ -258,17 +258,10 @@
             <button class="btn-stop" @click="stopAudio"><i class="bi bi-stop-fill"></i></button>
           </div>
           <div class="control-group">
-            <button class="btn-mode-select" @click="showModePanel = true">
-              <i :class="playModeIcon"></i>
-              <span>{{ playModeLabel }}</span>
-              <i class="bi bi-chevron-down"></i>
-            </button>
-          </div>
-          <div class="control-group">
-            <button class="btn-reciter-select" @click="showReciterPanel = true">
-              <i class="bi bi-mic-fill"></i>
-              <span>{{ currentReciterName }}</span>
-              <i class="bi bi-chevron-down"></i>
+            <button class="btn-settings" @click="showSettingsPanel = true">
+              <i class="bi bi-gear-fill"></i>
+              <span>{{ isArabic ? 'إعدادات' : 'Settings' }}</span>
+              <i class="bi bi-chevron-up"></i>
             </button>
           </div>
         </div>
@@ -303,37 +296,36 @@
       </div>
     </div>
 
-    <div class="mode-overlay" v-if="showModePanel" @click="showModePanel = false">
-      <div class="mode-panel" @click.stop>
-        <div class="panel-header">
-          <h5>{{ isArabic ? 'وضع التشغيل' : 'Play Mode' }}</h5>
-          <button class="panel-close" @click="showModePanel = false"><i class="bi bi-x-lg"></i></button>
+    <div class="settings-overlay" v-if="showSettingsPanel" @click="showSettingsPanel = false">
+      <div class="settings-panel" @click.stop>
+        <div class="settings-header">
+          <h5>{{ isArabic ? 'الإعدادات' : 'Settings' }}</h5>
+          <button class="panel-close" @click="showSettingsPanel = false"><i class="bi bi-x-lg"></i></button>
         </div>
-        <div class="mode-list">
-          <div class="mode-item" :class="{ active: playMode === 'repeat' }" @click="setPlayMode('repeat')">
-            <i class="bi bi-repeat mode-icon"></i>
-            <div class="mode-info">
-              <span class="mode-name">{{ isArabic ? 'تكرار' : 'Repeat' }}</span>
-              <span class="mode-desc">{{ isArabic ? 'يكرر الآية حتى إيقافها' : 'Repeats ayah until stopped' }}</span>
-            </div>
-            <i class="bi bi-check2-circle mode-check" v-if="playMode === 'repeat'"></i>
+        
+        <div class="settings-section">
+          <div class="settings-label">{{ isArabic ? 'وضع التشغيل' : 'Play Mode' }}</div>
+          <div class="settings-options">
+            <button class="option-btn" :class="{ active: playMode === 'repeat' }" @click="setPlayMode('repeat')">
+              <i class="bi bi-repeat"></i>
+              <span>{{ isArabic ? 'تكرار' : 'Repeat' }}</span>
+            </button>
+            <button class="option-btn" :class="{ active: playMode === 'continue' }" @click="setPlayMode('continue')">
+              <i class="bi bi-arrow-right-circle"></i>
+              <span>{{ isArabic ? 'استمرار' : 'Continue' }}</span>
+            </button>
+            <button class="option-btn" :class="{ active: playMode === 'once' }" @click="setPlayMode('once')">
+              <i class="bi bi-play-circle"></i>
+              <span>{{ isArabic ? 'مرة' : 'Once' }}</span>
+            </button>
           </div>
-          <div class="mode-item" :class="{ active: playMode === 'continue' }" @click="setPlayMode('continue')">
-            <i class="bi bi-arrow-right-circle mode-icon"></i>
-            <div class="mode-info">
-              <span class="mode-name">{{ isArabic ? 'استمرار' : 'Continue' }}</span>
-              <span class="mode-desc">{{ isArabic ? 'يقرأ الآية مرة واحدة ويكمل' : 'Plays ayah once and continues' }}</span>
-            </div>
-            <i class="bi bi-check2-circle mode-check" v-if="playMode === 'continue'"></i>
-          </div>
-          <div class="mode-item" :class="{ active: playMode === 'once' }" @click="setPlayMode('once')">
-            <i class="bi bi-play-circle mode-icon"></i>
-            <div class="mode-info">
-              <span class="mode-name">{{ isArabic ? 'مرة واحدة' : 'Once' }}</span>
-              <span class="mode-desc">{{ isArabic ? 'يقرأ الآية فقط عند الضغط' : 'Plays ayah only on tap' }}</span>
-            </div>
-            <i class="bi bi-check2-circle mode-check" v-if="playMode === 'once'"></i>
-          </div>
+        </div>
+
+        <div class="settings-section">
+          <div class="settings-label">{{ isArabic ? 'القارئ' : 'Reciter' }}</div>
+          <select class="reciter-select" :value="selectedReciter" @change="selectReciter($event.target.value)">
+            <option v-for="r in RECITERS" :key="r.id" :value="r.id">{{ r.name }}</option>
+          </select>
         </div>
       </div>
     </div>
