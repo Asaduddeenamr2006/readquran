@@ -163,17 +163,30 @@ createApp({
       }
     };
 
+    let currentAudio = null;
+
     const playCurrentAyah = () => {
       if (!currentSurah.value) return;
-      const audio = new Audio(`https://api.alquran.cloud/v1/ayah/${currentSurah.value}:1/${selectedReciter.value}`);
-      audio.play().catch(e => console.log('Play error:', e));
+      stopAudio();
+      currentAudio = new Audio(`https://api.alquran.cloud/v1/ayah/${currentSurah.value}:1/${selectedReciter.value}`);
+      currentAudio.play().catch(e => console.log('Play error:', e));
     };
 
-    window.playAyah = (ayahNum) => {
-      if (!currentSurah.value) return;
-      const audio = new Audio(`https://api.alquran.cloud/v1/ayah/${currentSurah.value}:${ayahNum}/${selectedReciter.value}`);
-      audio.play().catch(e => console.log('Play error:', e));
+    const stopAudio = () => {
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
     };
+
+    const playAyah = (ayahNum) => {
+      if (!currentSurah.value) return;
+      stopAudio();
+      currentAudio = new Audio(`https://api.alquran.cloud/v1/ayah/${currentSurah.value}:${ayahNum}/${selectedReciter.value}`);
+      currentAudio.play().catch(e => console.log('Play error:', e));
+    };
+
+    window.playAyah = playAyah;
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') nextPage();
@@ -222,6 +235,7 @@ createApp({
       nextPage,
       loadSurah,
       playCurrentAyah,
+      stopAudio,
       increaseFontSize,
       decreaseFontSize
     };

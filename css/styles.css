@@ -462,12 +462,57 @@ body.dark-theme .page-item.disabled .page-link {
   cursor: pointer;
 }
 
+.mobile-loader {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(255,255,255,0.95);
+  z-index: 9999;
+  justify-content: center;
+  align-items: center;
+  flex-direction: column;
+}
+
+body.dark-theme .mobile-loader {
+  background: rgba(30,30,46,0.95);
+}
+
 @media (max-width: 768px) {
+  .mobile-loader {
+    display: flex;
+  }
+  
   .menu-toggle {
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.5rem;
+    top: 70px;
+  }
+
+  .app-header {
+    padding: 8px 0;
+  }
+  
+  .app-header .row {
+    align-items: center;
+  }
+  
+  .app-header .d-flex {
+    gap: 5px !important;
+  }
+  
+  .app-header .btn-custom, 
+  .app-header .btn-sm {
+    padding: 6px 10px;
+    font-size: 12px;
+  }
+  
+  .app-header h4 {
+    font-size: 1rem !important;
   }
 
   .surah-sidebar {
@@ -495,6 +540,162 @@ body.dark-theme .page-item.disabled .page-link {
 
   .app-header h4 {
     font-size: 1rem;
+  }
+  
+  .controls-bar {
+    padding: 10px 8px;
+  }
+  
+  .controls-bar .row {
+    justify-content: center;
+  }
+  
+  .controls-bar .btn-custom {
+    padding: 8px 12px;
+    font-size: 12px;
+    margin: 2px;
+  }
+  
+  .controls-bar .form-select {
+    padding: 6px 10px;
+    font-size: 12px;
+    width: 100% !important;
+  }
+  
+  .controls-bar .col-sm-4 {
+    text-align: center !important;
+    margin-bottom: 5px;
+  }
+  
+  .quran-text {
+    font-size: 16px !important;
+    line-height: 2;
+  }
+  
+  .reading-page-container {
+    padding: 20px 10px 80px;
+  }
+  
+  .reading-controls {
+    bottom: 10px;
+    padding: 8px 10px;
+    gap: 5px;
+    width: 95%;
+    left: 50%;
+    transform: translateX(-50%);
+  }
+  
+  .reading-control-btn {
+    padding: 6px 10px;
+    font-size: 11px;
+  }
+  
+  .exit-reading-btn {
+    top: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .surah-list {
+    max-height: calc(100vh - 220px) !important;
+  }
+  
+  .surah-item {
+    padding: 10px 12px;
+    font-size: 14px;
+  }
+  
+  .surah-item span {
+    font-size: 13px;
+  }
+  
+  .surah-item small {
+    font-size: 11px;
+  }
+  
+  .badge {
+    font-size: 10px !important;
+  }
+  
+  .form-control {
+    font-size: 14px;
+    padding: 8px 12px;
+  }
+  
+  .toast-container {
+    width: 90%;
+  }
+  
+  .focus-toast {
+    font-size: 14px;
+    padding: 12px 20px;
+  }
+  
+  .mushaf-info {
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header .btn-custom, 
+  .app-header .btn-sm {
+    padding: 5px 8px;
+    font-size: 11px;
+  }
+  
+  .app-header h4 {
+    font-size: 0.9rem !important;
+  }
+  
+  .btn-custom {
+    padding: 8px 14px;
+    font-size: 13px;
+  }
+  
+  .quran-text {
+    font-size: 14px !important;
+  }
+  
+  .reading-control-btn.font-size-display,
+  .reading-control-btn.page-counter {
+    min-width: 45px;
+    font-size: 10px;
+  }
+  
+  .focus-mode-toggle {
+    padding: 8px 12px;
+    font-size: 12px;
+  }
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .btn-custom:active {
+    transform: scale(0.95);
+  }
+  
+  .surah-item:active {
+    transform: scale(0.98);
+  }
+  
+  .page-link:active {
+    transform: scale(0.95);
+  }
+  
+  .reading-control-btn:active {
+    transform: scale(0.95);
+    background: var(--primary-color);
+    color: white;
+  }
+  
+  .exit-reading-btn:active {
+    transform: scale(0.95);
   }
 }
 
