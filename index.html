@@ -230,7 +230,6 @@
                   <span>{{ isArabic ? 'الآيات' : 'Ayahs' }} {{ page.startAyah }} - {{ page.endAyah }}</span>
                 </div>
               </div>
-              <div v-if="currentPageIndex === 0 && page.isFirstPage" class="bismillah">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>
               <div class="quran-text" :style="{ fontSize: fontSize + 'px' }" v-html="page.text"></div>
             </div>
 
@@ -259,11 +258,6 @@
         <div class="reading-page">
           <transition :name="pageTransition" mode="out-in">
             <div class="reading-content" :key="currentPageIndex">
-              <div v-if="currentPageIndex === 0 && pages[currentPageIndex]?.isFirstPage" class="bismillah-ornament">
-                <div class="ornament-line"></div>
-                <div class="bismillah-text">بِسْمِ ٱللَّهِ ٱلرَّحْمَـٰنِ ٱلرَّحِيمِ</div>
-                <div class="ornament-line"></div>
-              </div>
               <div class="quran-text reading-text" :style="{ fontSize: fontSize + 'px', lineHeight: lineHeight, textAlign: textAlign }" v-html="pages[currentPageIndex]?.text"></div>
             </div>
           </transition>
@@ -274,22 +268,51 @@
     <div class="controls-bar" v-if="!isReadingMode">
       <div class="controls-container">
         <div class="controls-row">
-          <div class="control-group">
-            <select id="reciter" class="form-select reciter-select" v-model="selectedReciter">
-              <option value="ar.alafasy">{{ isArabic ? 'العفاسي' : 'Alafasy' }}</option>
-              <option value="ar.husary">{{ isArabic ? 'الحصري' : 'Husary' }}</option>
-              <option value="ar.abdulbasit">{{ isArabic ? 'عبد الباسط' : 'Abdul Basit' }}</option>
-              <option value="ar.sudais">{{ isArabic ? 'السديس' : 'Sudais' }}</option>
-            </select>
-          </div>
           <div class="control-group control-actions">
-            <button class="btn-play" @click="playCurrentAyah" :disabled="!currentSurah">
-              <i class="bi bi-play-fill"></i>
-              <span class="btn-text">{{ isArabic ? 'تشغيل' : 'Play' }}</span>
+            <button class="btn-play" @click="togglePlayPause" :disabled="!currentSurah" :class="{ playing: isPlaying }">
+              <i :class="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
+              <span class="btn-text">{{ isPlaying ? (isArabic ? 'إيقاف مؤقت' : 'Pause') : (isArabic ? 'تشغيل' : 'Play') }}</span>
             </button>
             <button class="btn-stop" @click="stopAudio">
               <i class="bi bi-stop-fill"></i>
             </button>
+          </div>
+          <div class="control-group">
+            <button class="btn-reciter-select" @click="toggleReciterPanel">
+              <i class="bi bi-mic-fill"></i>
+              <span>{{ currentReciter.name }}</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="reciter-panel-overlay" v-if="showReciterPanel" @click="showReciterPanel = false">
+      <div class="reciter-panel" @click.stop>
+        <div class="panel-header">
+          <h5>{{ isArabic ? 'اختر القارئ' : 'Select Reciter' }}</h5>
+          <button class="panel-close" @click="showReciterPanel = false"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="reciter-list">
+          <div v-for="reciter in reciters" :key="reciter.id" 
+               class="reciter-option" :class="{ active: selectedReciter === reciter.id }"
+               @click="selectReciter(reciter.id)">
+            <i class="bi bi-mic-fill reciter-icon"></i>
+            <div class="reciter-info">
+              <div class="reciter-name">{{ reciter.name }}</div>
+              <div class="reciter-name-en">{{ reciter.nameEn }}</div>
+            </div>
+            <i class="bi bi-check2-circle reciter-check" v-if="selectedReciter === reciter.id"></i>
+          </div>
+        </div>
+        <div class="panel-section-label">{{ isArabic ? 'مصدر الصوت' : 'Audio Source' }}</div>
+        <div class="source-options">
+          <div v-for="source in sources" :key="source.id"
+               class="source-option" :class="{ active: selectedSource === source.id }"
+               @click="selectSource(source.id)">
+            <span>{{ source.name }}</span>
+            <i class="bi bi-check2" v-if="selectedSource === source.id"></i>
           </div>
         </div>
       </div>

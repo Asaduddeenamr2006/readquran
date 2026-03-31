@@ -1,4 +1,22 @@
-const { createApp, ref, computed, onMounted, nextTick, watch } = Vue;
+const { createApp, ref, computed, onMounted, nextTick } = Vue;
+
+const RECITERS = [
+  { id: 'alafasy', name: 'مشاري العفاسي', nameEn: 'Alafasy', server: 'mp3quran', baseUrl: 'https://server8.mp3quran.net/afs/', everyayahKey: 'Alafasy_128kbps' },
+  { id: 'husary', name: 'محمود خليل الحصري', nameEn: 'Husary', server: 'mp3quran', baseUrl: 'https://server13.mp3quran.net/husr/', everyayahKey: 'Husary_128kbps' },
+  { id: 'abdulbasit', name: 'عبد الباسط عبد الصمد', nameEn: 'Abdul Basit', server: 'mp3quran', baseUrl: 'https://server7.mp3quran.net/basit/', everyayahKey: 'Abdul_Basit_Murattal_192kbps' },
+  { id: 'sudais', name: 'عبد الرحمن السديس', nameEn: 'Sudais', server: 'mp3quran', baseUrl: 'https://server11.mp3quran.net/sds/', everyayahKey: 'Abdurrahmaan_As-Sudais_192kbps' },
+  { id: 'minshawi', name: 'محمد صديق المنشاوي', nameEn: 'Minshawi', server: 'mp3quran', baseUrl: 'https://server10.mp3quran.net/minsh/', everyayahKey: 'Minshawy_Murattal_128kbps' },
+  { id: 'maher', name: 'ماهر المعيقلي', nameEn: 'Maher Al Muaiqly', server: 'mp3quran', baseUrl: 'https://server12.mp3quran.net/maher/', everyayahKey: 'Alafasy_128kbps' },
+  { id: 'ghamdi', name: 'سعد الغامدي', nameEn: 'Saad Al Ghamdi', server: 'mp3quran', baseUrl: 'https://server7.mp3quran.net/s_gmd/', everyayahKey: 'Ghamadi_40kbps' },
+  { id: 'ajmi', name: 'أحمد العجمي', nameEn: 'Ahmed Al Ajmi', server: 'mp3quran', baseUrl: 'https://server10.mp3quran.net/ajm/', everyayahKey: 'Ahmed_ibn_Ali_al-Ajamy_128kbps' },
+  { id: 'shuraim', name: 'سعود الشريم', nameEn: 'Shuraim', server: 'mp3quran', baseUrl: 'https://server7.mp3quran.net/shur/', everyayahKey: 'Shuraim_128kbps' },
+  { id: 'dosari', name: 'فارس عباد', nameEn: 'Fares Abbad', server: 'mp3quran', baseUrl: 'https://server8.mp3quran.net/frs_a/', everyayahKey: 'Fares_Abbad_128kbps' }
+];
+
+const AUDIO_SOURCES = [
+  { id: 'mp3quran', name: 'MP3Quran.net', nameEn: 'MP3Quran' },
+  { id: 'everyayah', name: 'EveryAyah.com', nameEn: 'EveryAyah' }
+];
 
 createApp({
   setup() {
@@ -8,11 +26,13 @@ createApp({
     const sidebarOpen = ref(false);
     const loading = ref(false);
     const searchQuery = ref('');
-    const selectedReciter = ref('ar.alafasy');
+    const selectedReciter = ref('alafasy');
+    const selectedSource = ref('everyayah');
     const currentSurah = ref(null);
     const currentPageIndex = ref(0);
     const surahs = ref([]);
     const pages = ref([]);
+    const allAyahs = ref([]);
     const toasts = ref([]);
     const fontSize = ref(28);
     const lineHeight = ref(2.6);
@@ -23,6 +43,10 @@ createApp({
     const pageTransition = ref('slide-left');
     const contentArea = ref(null);
     const readingArea = ref(null);
+    const playingAyahNumber = ref(null);
+    const isPlaying = ref(false);
+    const showReciterPanel = ref(false);
+    const showSourcePanel = ref(false);
 
     let touchStartX = 0;
     let touchStartY = 0;
@@ -30,6 +54,7 @@ createApp({
     let currentAudio = null;
     let controlsTimeout = null;
     let lastTapTime = 0;
+    let currentPlayingAyahIndex = -1;
 
     const surahPageCount = {
       1: 1, 2: 49, 3: 35, 4: 38, 5: 30, 6: 27, 7: 27, 8: 10, 9: 22,
@@ -46,6 +71,9 @@ createApp({
       100: 3, 101: 3, 102: 3, 103: 3, 104: 3, 105: 3, 106: 3, 107: 3, 108: 3,
       109: 3, 110: 3, 111: 3, 112: 3, 113: 3, 114: 3
     };
+
+    const currentReciter = computed(() => RECITERS.find(r => r.id === selectedReciter.value) || RECITERS[0]);
+    const currentSource = computed(() => AUDIO_SOURCES.find(s => s.id === selectedSource.value) || AUDIO_SOURCES[0]);
 
     const currentSurahName = computed(() => {
       if (!currentSurah.value || !surahs.value.length) return '';
@@ -72,6 +100,16 @@ createApp({
 
     const getSurahPageCount = (num) => surahPageCount[num] || 10;
 
+    const padNum = (num, len = 3) => String(num).padStart(len, '0');
+
+    const getAyahAudioUrl = (surahNum, ayahNum) => {
+      const reciter = currentReciter.value;
+      if (selectedSource.value === 'everyayah') {
+        return `https://everyayah.com/data/${reciter.everyayahKey}/${padNum(surahNum)}${padNum(ayahNum, 3)}.mp3`;
+      }
+      return `${reciter.baseUrl}${padNum(surahNum)}.mp3`;
+    };
+
     const saveState = () => {
       try {
         const state = {
@@ -80,6 +118,7 @@ createApp({
           currentSurah: currentSurah.value,
           currentPageIndex: currentPageIndex.value,
           selectedReciter: selectedReciter.value,
+          selectedSource: selectedSource.value,
           fontSize: fontSize.value,
           lineHeight: lineHeight.value,
           textAlign: textAlign.value,
@@ -100,7 +139,8 @@ createApp({
           isArabic.value = state.isArabic ?? true;
           currentSurah.value = state.currentSurah ?? null;
           currentPageIndex.value = state.currentPageIndex ?? 0;
-          selectedReciter.value = state.selectedReciter ?? 'ar.alafasy';
+          selectedReciter.value = state.selectedReciter ?? 'alafasy';
+          selectedSource.value = state.selectedSource ?? 'everyayah';
           fontSize.value = state.fontSize ?? 28;
           lineHeight.value = state.lineHeight ?? 2.6;
           textAlign.value = state.textAlign ?? 'center';
@@ -184,6 +224,38 @@ createApp({
 
     const toggleReadingSettings = () => {
       showReadingSettings.value = !showReadingSettings.value;
+      showReciterPanel.value = false;
+      showSourcePanel.value = false;
+    };
+
+    const toggleReciterPanel = () => {
+      showReciterPanel.value = !showReciterPanel.value;
+      showSourcePanel.value = false;
+      showReadingSettings.value = false;
+    };
+
+    const toggleSourcePanel = () => {
+      showSourcePanel.value = !showSourcePanel.value;
+      showReciterPanel.value = false;
+      showReadingSettings.value = false;
+    };
+
+    const selectReciter = (id) => {
+      selectedReciter.value = id;
+      showReciterPanel.value = false;
+      saveState();
+      if (isPlaying.value) {
+        playFromAyah(currentPlayingAyahIndex);
+      }
+    };
+
+    const selectSource = (id) => {
+      selectedSource.value = id;
+      showSourcePanel.value = false;
+      saveState();
+      if (isPlaying.value) {
+        playFromAyah(currentPlayingAyahIndex);
+      }
     };
 
     const toggleReadingMode = () => {
@@ -275,20 +347,14 @@ createApp({
       const deltaY = touchEndY - touchStartY;
       const deltaTime = Date.now() - touchStartTime;
 
-      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 50 && deltaTime < 500) {
+      if (Math.abs(deltaX) > Math.abs(deltaY) && Math.abs(deltaX) > 80 && Math.abs(deltaY) < 40 && deltaTime < 500) {
         const isRtl = document.documentElement.dir === 'rtl';
         if (isRtl) {
-          if (deltaX > 0) {
-            nextPage();
-          } else {
-            prevPage();
-          }
+          if (deltaX > 0) nextPage();
+          else prevPage();
         } else {
-          if (deltaX < 0) {
-            nextPage();
-          } else {
-            prevPage();
-          }
+          if (deltaX < 0) nextPage();
+          else prevPage();
         }
       }
 
@@ -315,6 +381,7 @@ createApp({
       currentPageIndex.value = 0;
       sidebarOpen.value = false;
       document.body.style.overflow = '';
+      stopAudio();
 
       try {
         const res = await fetch(`https://api.alquran.cloud/v1/surah/${num}`);
@@ -322,6 +389,8 @@ createApp({
         const data = await res.json();
         
         const ayahs = data.data.ayahs;
+        allAyahs.value = ayahs;
+        
         const total = getSurahPageCount(num);
         const ayahsPerPage = Math.max(1, Math.ceil(ayahs.length / total));
         
@@ -330,7 +399,7 @@ createApp({
         for (let i = 0; i < ayahs.length; i += ayahsPerPage) {
           const chunk = ayahs.slice(i, Math.min(i + ayahsPerPage, ayahs.length));
           const text = chunk.map(a => 
-            `${a.text} <span class="ayah-number" onclick="window.__playAyah(${a.numberInSurah})">۝ ${a.numberInSurah}</span>`
+            `${a.text} <span class="ayah-number" data-ayah="${a.numberInSurah}" onclick="window.__playAyah(${a.numberInSurah})">۝ ${a.numberInSurah}</span>`
           ).join(' ');
           
           pages.value.push({
@@ -351,26 +420,135 @@ createApp({
       }
     };
 
-    const playCurrentAyah = () => {
-      if (!currentSurah.value) return;
-      stopAudio();
-      currentAudio = new Audio(`https://api.alquran.cloud/v1/ayah/${currentSurah.value}:1/${selectedReciter.value}`);
-      currentAudio.play().catch(e => console.log('Play error:', e));
-    };
-
     const stopAudio = () => {
       if (currentAudio) {
         currentAudio.pause();
         currentAudio.currentTime = 0;
         currentAudio = null;
       }
+      isPlaying.value = false;
+      playingAyahNumber.value = null;
+      currentPlayingAyahIndex = -1;
+      document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
+    };
+
+    const playFromAyah = (ayahIndex) => {
+      if (!currentSurah.value || !allAyahs.value.length) return;
+      
+      currentPlayingAyahIndex = ayahIndex;
+      const ayah = allAyahs.value[ayahIndex];
+      if (!ayah) return;
+
+      playingAyahNumber.value = ayah.numberInSurah;
+      isPlaying.value = true;
+
+      document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
+      const el = document.querySelector(`.ayah-number[data-ayah="${ayah.numberInSurah}"]`);
+      if (el) el.classList.add('playing');
+
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      if (selectedSource.value === 'mp3quran') {
+        currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
+        currentAudio.addEventListener('loadedmetadata', () => {
+          const startFraction = ayahIndex / allAyahs.value.length;
+          currentAudio.currentTime = currentAudio.duration * startFraction;
+        });
+        currentAudio.addEventListener('timeupdate', () => {
+          if (!currentAudio || !currentAudio.duration) return;
+          const fraction = currentAudio.currentTime / currentAudio.duration;
+          const estimatedIndex = Math.floor(fraction * allAyahs.value.length);
+          if (estimatedIndex !== currentPlayingAyahIndex && estimatedIndex < allAyahs.value.length) {
+            currentPlayingAyahIndex = estimatedIndex;
+            const currentAyah = allAyahs.value[estimatedIndex];
+            if (currentAyah) {
+              playingAyahNumber.value = currentAyah.numberInSurah;
+              document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
+              const el = document.querySelector(`.ayah-number[data-ayah="${currentAyah.numberInSurah}"]`);
+              if (el) el.classList.add('playing');
+            }
+          }
+        });
+        currentAudio.addEventListener('ended', () => {
+          if (currentPlayingAyahIndex < allAyahs.value.length - 1) {
+            playFromAyah(currentPlayingAyahIndex + 1);
+          } else {
+            stopAudio();
+            showToast(isArabic.value ? 'تمت السورة' : 'Surah completed', 'bi bi-check-circle');
+          }
+        });
+      } else {
+        currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
+        currentAudio.addEventListener('ended', () => {
+          if (currentPlayingAyahIndex < allAyahs.value.length - 1) {
+            playFromAyah(currentPlayingAyahIndex + 1);
+          } else {
+            stopAudio();
+            showToast(isArabic.value ? 'تمت السورة' : 'Surah completed', 'bi bi-check-circle');
+          }
+        });
+      }
+
+      currentAudio.addEventListener('error', () => {
+        if (currentPlayingAyahIndex < allAyahs.value.length - 1) {
+          playFromAyah(currentPlayingAyahIndex + 1);
+        } else {
+          stopAudio();
+        }
+      });
+
+      currentAudio.play().catch(e => {
+        console.log('Play error:', e);
+        stopAudio();
+      });
     };
 
     const playAyah = (ayahNum) => {
-      if (!currentSurah.value) return;
-      stopAudio();
-      currentAudio = new Audio(`https://api.alquran.cloud/v1/ayah/${currentSurah.value}:${ayahNum}/${selectedReciter.value}`);
-      currentAudio.play().catch(e => console.log('Play error:', e));
+      if (!currentSurah.value || !allAyahs.value.length) return;
+      
+      const ayahIndex = allAyahs.value.findIndex(a => a.numberInSurah === ayahNum);
+      if (ayahIndex === -1) return;
+
+      if (isPlaying.value && playingAyahNumber.value === ayahNum) {
+        stopAudio();
+        return;
+      }
+
+      playFromAyah(ayahIndex);
+    };
+
+    const playCurrentAyah = () => {
+      if (!currentSurah.value || !allAyahs.value.length) return;
+      
+      if (isPlaying.value) {
+        if (currentAudio) {
+          currentAudio.pause();
+          isPlaying.value = false;
+        }
+        return;
+      }
+
+      playFromAyah(0);
+    };
+
+    const togglePlayPause = () => {
+      if (!currentSurah.value || !allAyahs.value.length) return;
+      
+      if (isPlaying.value) {
+        if (currentAudio) {
+          currentAudio.pause();
+          isPlaying.value = false;
+        }
+      } else {
+        if (currentPlayingAyahIndex >= 0) {
+          playFromAyah(currentPlayingAyahIndex);
+        } else {
+          playFromAyah(0);
+        }
+      }
     };
 
     window.__playAyah = playAyah;
@@ -383,6 +561,8 @@ createApp({
         if (isReadingMode.value) exitReadingMode();
         if (sidebarOpen.value) closeSidebar();
         if (showReadingSettings.value) showReadingSettings.value = false;
+        if (showReciterPanel.value) showReciterPanel.value = false;
+        if (showSourcePanel.value) showSourcePanel.value = false;
       }
       else if (isReadingMode.value) {
         if (e.key === 'ArrowUp' || e.key === 'ArrowDown') {
@@ -393,6 +573,10 @@ createApp({
         } else if (e.key === '-') {
           decreaseFontSize();
         }
+      }
+      else if (e.key === ' ') {
+        e.preventDefault();
+        togglePlayPause();
       }
       resetControlsTimeout();
     });
@@ -415,10 +599,12 @@ createApp({
       loading,
       searchQuery,
       selectedReciter,
+      selectedSource,
       currentSurah,
       currentPageIndex,
       surahs,
       pages,
+      allAyahs,
       toasts,
       fontSize,
       lineHeight,
@@ -426,9 +612,17 @@ createApp({
       readingTheme,
       readingControlsVisible,
       showReadingSettings,
+      showReciterPanel,
+      showSourcePanel,
       pageTransition,
       contentArea,
       readingArea,
+      playingAyahNumber,
+      isPlaying,
+      currentReciter,
+      currentSource,
+      reciters: RECITERS,
+      sources: AUDIO_SOURCES,
       currentSurahName,
       filteredSurahs,
       totalPages,
@@ -443,13 +637,19 @@ createApp({
       nextPage,
       loadSurah,
       playCurrentAyah,
+      togglePlayPause,
       stopAudio,
+      playAyah,
       increaseFontSize,
       decreaseFontSize,
       increaseLineHeight,
       decreaseLineHeight,
       setReadingTheme,
       toggleReadingSettings,
+      toggleReciterPanel,
+      toggleSourcePanel,
+      selectReciter,
+      selectSource,
       handleTouchStart,
       handleTouchMove,
       handleTouchEnd,
