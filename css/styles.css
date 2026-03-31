@@ -466,6 +466,36 @@ body.dark-theme {
   direction: rtl;
 }
 
+.quran-word {
+  cursor: pointer;
+  transition: all 0.15s ease;
+  border-radius: 4px;
+  padding: 2px 4px;
+  display: inline;
+}
+
+.quran-word:hover {
+  background: rgba(44, 122, 77, 0.15);
+  color: var(--primary-color);
+}
+
+.quran-word.playing {
+  background: var(--accent-color);
+  color: var(--primary-dark);
+  border-radius: 6px;
+  padding: 2px 6px;
+  box-shadow: 0 0 10px rgba(255, 215, 0, 0.4);
+}
+
+.reading-text .quran-word:hover {
+  background: rgba(44, 122, 77, 0.1);
+}
+
+.reading-text .quran-word.playing {
+  background: var(--accent-color);
+  color: var(--primary-dark);
+}
+
 .ayah-number {
   display: inline-flex;
   align-items: center;
@@ -698,6 +728,70 @@ body.dark-theme {
 
 .btn-reciter-select i:first-child {
   font-size: 1rem;
+}
+
+.repeat-control {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.repeat-btn {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 1.1rem;
+  position: relative;
+}
+
+.repeat-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.repeat-btn.active {
+  background: var(--accent-color);
+  color: var(--primary-dark);
+  border-color: var(--accent-color);
+  animation: repeatPulse 2s ease infinite;
+}
+
+@keyframes repeatPulse {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.4); }
+  50% { box-shadow: 0 0 0 6px rgba(255, 215, 0, 0); }
+}
+
+.stop-repeat-btn {
+  background: var(--danger-color);
+  border: none;
+  color: white;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  font-size: 0.85rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.stop-repeat-btn:hover {
+  background: #c82333;
+  transform: scale(1.1);
+}
+
+.stop-repeat-btn:active {
+  transform: scale(0.9);
 }
 
 .reciter-panel-overlay {
@@ -1632,10 +1726,6 @@ body.dark-theme ::-webkit-scrollbar-track {
   :root {
     --header-height: 56px;
     --controls-height: 56px;
-  }
-  
-  .mobile-loader {
-    display: flex;
   }
   
   .menu-toggle {
