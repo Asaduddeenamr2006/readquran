@@ -1,16 +1,16 @@
 const { createApp, ref, computed, onMounted, nextTick } = Vue;
 
 const RECITERS = [
-  { id: 'alafasy', name: 'مشاري العفاسي', nameEn: 'Alafasy', server: 'mp3quran', baseUrl: 'https://server8.mp3quran.net/afs/', everyayahKey: 'Alafasy_128kbps' },
-  { id: 'husary', name: 'محمود خليل الحصري', nameEn: 'Husary', server: 'mp3quran', baseUrl: 'https://server13.mp3quran.net/husr/', everyayahKey: 'Husary_128kbps' },
-  { id: 'abdulbasit', name: 'عبد الباسط عبد الصمد', nameEn: 'Abdul Basit', server: 'mp3quran', baseUrl: 'https://server7.mp3quran.net/basit/', everyayahKey: 'Abdul_Basit_Murattal_192kbps' },
-  { id: 'sudais', name: 'عبد الرحمن السديس', nameEn: 'Sudais', server: 'mp3quran', baseUrl: 'https://server11.mp3quran.net/sds/', everyayahKey: 'Abdurrahmaan_As-Sudais_192kbps' },
-  { id: 'minshawi', name: 'محمد صديق المنشاوي', nameEn: 'Minshawi', server: 'mp3quran', baseUrl: 'https://server10.mp3quran.net/minsh/', everyayahKey: 'Minshawy_Murattal_128kbps' },
-  { id: 'maher', name: 'ماهر المعيقلي', nameEn: 'Maher Al Muaiqly', server: 'mp3quran', baseUrl: 'https://server12.mp3quran.net/maher/', everyayahKey: 'Alafasy_128kbps' },
-  { id: 'ghamdi', name: 'سعد الغامدي', nameEn: 'Saad Al Ghamdi', server: 'mp3quran', baseUrl: 'https://server7.mp3quran.net/s_gmd/', everyayahKey: 'Ghamadi_40kbps' },
-  { id: 'ajmi', name: 'أحمد العجمي', nameEn: 'Ahmed Al Ajmi', server: 'mp3quran', baseUrl: 'https://server10.mp3quran.net/ajm/', everyayahKey: 'Ahmed_ibn_Ali_al-Ajamy_128kbps' },
-  { id: 'shuraim', name: 'سعود الشريم', nameEn: 'Shuraim', server: 'mp3quran', baseUrl: 'https://server7.mp3quran.net/shur/', everyayahKey: 'Shuraim_128kbps' },
-  { id: 'dosari', name: 'فارس عباد', nameEn: 'Fares Abbad', server: 'mp3quran', baseUrl: 'https://server8.mp3quran.net/frs_a/', everyayahKey: 'Fares_Abbad_128kbps' }
+  { id: 'alafasy', name: 'مشاري العفاسي', nameEn: 'Alafasy', baseUrl: 'https://server8.mp3quran.net/afs/', everyayahKey: 'Alafasy_128kbps' },
+  { id: 'husary', name: 'محمود خليل الحصري', nameEn: 'Husary', baseUrl: 'https://server13.mp3quran.net/husr/', everyayahKey: 'Husary_128kbps' },
+  { id: 'abdulbasit', name: 'عبد الباسط عبد الصمد', nameEn: 'Abdul Basit', baseUrl: 'https://server7.mp3quran.net/basit/', everyayahKey: 'Abdul_Basit_Murattal_192kbps' },
+  { id: 'sudais', name: 'عبد الرحمن السديس', nameEn: 'Sudais', baseUrl: 'https://server11.mp3quran.net/sds/', everyayahKey: 'Abdurrahmaan_As-Sudais_192kbps' },
+  { id: 'minshawi', name: 'محمد صديق المنشاوي', nameEn: 'Minshawi', baseUrl: 'https://server10.mp3quran.net/minsh/', everyayahKey: 'Minshawy_Murattal_128kbps' },
+  { id: 'maher', name: 'ماهر المعيقلي', nameEn: 'Maher Al Muaiqly', baseUrl: 'https://server12.mp3quran.net/maher/', everyayahKey: 'Alafasy_128kbps' },
+  { id: 'ghamdi', name: 'سعد الغامدي', nameEn: 'Saad Al Ghamdi', baseUrl: 'https://server7.mp3quran.net/s_gmd/', everyayahKey: 'Ghamadi_40kbps' },
+  { id: 'ajmi', name: 'أحمد العجمي', nameEn: 'Ahmed Al Ajmi', baseUrl: 'https://server10.mp3quran.net/ajm/', everyayahKey: 'Ahmed_ibn_Ali_al-Ajamy_128kbps' },
+  { id: 'shuraim', name: 'سعود الشريم', nameEn: 'Shuraim', baseUrl: 'https://server7.mp3quran.net/shur/', everyayahKey: 'Shuraim_128kbps' },
+  { id: 'dosari', name: 'فارس عباد', nameEn: 'Fares Abbad', baseUrl: 'https://server8.mp3quran.net/frs_a/', everyayahKey: 'Fares_Abbad_128kbps' }
 ];
 
 const AUDIO_SOURCES = [
@@ -20,7 +20,7 @@ const AUDIO_SOURCES = [
 
 createApp({
   setup() {
-    const isDark = ref(false);
+    const isDark = ref(true);
     const isArabic = ref(true);
     const isReadingMode = ref(false);
     const sidebarOpen = ref(false);
@@ -47,6 +47,9 @@ createApp({
     const isPlaying = ref(false);
     const showReciterPanel = ref(false);
     const showSourcePanel = ref(false);
+    const repeatCount = ref(0);
+    const currentRepeat = ref(0);
+    const playMode = ref('surah');
 
     let touchStartX = 0;
     let touchStartY = 0;
@@ -135,7 +138,7 @@ createApp({
         const saved = localStorage.getItem('quranAppState');
         if (saved) {
           const state = JSON.parse(saved);
-          isDark.value = state.isDark ?? false;
+          isDark.value = state.isDark ?? true;
           isArabic.value = state.isArabic ?? true;
           currentSurah.value = state.currentSurah ?? null;
           currentPageIndex.value = state.currentPageIndex ?? 0;
@@ -214,7 +217,7 @@ createApp({
 
     const setReadingTheme = (theme) => {
       readingTheme.value = theme;
-      if (theme === 'light') {
+      if (theme === 'light' || theme === 'sepia') {
         isDark.value = false;
       } else if (theme === 'dark' || theme === 'night') {
         isDark.value = true;
@@ -384,12 +387,29 @@ createApp({
       stopAudio();
 
       try {
-        const res = await fetch(`https://api.alquran.cloud/v1/surah/${num}`);
-        if (!res.ok) throw new Error('Network response was not ok');
-        const data = await res.json();
+        const surahRes = await fetch(`https://api.alquran.cloud/v1/surah/${num}`);
+        if (!surahRes.ok) throw new Error('Network response was not ok');
+        const surahData = await surahRes.json();
         
-        const ayahs = data.data.ayahs;
+        const ayahs = surahData.data.ayahs;
         allAyahs.value = ayahs;
+        
+        const wordsByAyah = {};
+        try {
+          const wordsRes = await fetch(`https://api.quran.com/api/v4/verses/by_chapter/${num}?language=ar&words=true&word_fields=text_uthmani,translation&translations=131&per_page=300`);
+          if (wordsRes.ok) {
+            const wordsData = await wordsRes.json();
+            if (wordsData.verses) {
+              wordsData.verses.forEach(v => {
+                if (v.words) {
+                  wordsByAyah[v.verse_number] = v.words;
+                }
+              });
+            }
+          }
+        } catch (e) {
+          console.warn('Word-by-word data not available, using fallback text');
+        }
         
         const total = getSurahPageCount(num);
         const ayahsPerPage = Math.max(1, Math.ceil(ayahs.length / total));
@@ -398,9 +418,19 @@ createApp({
         
         for (let i = 0; i < ayahs.length; i += ayahsPerPage) {
           const chunk = ayahs.slice(i, Math.min(i + ayahsPerPage, ayahs.length));
-          const text = chunk.map(a => 
-            `${a.text} <span class="ayah-number" data-ayah="${a.numberInSurah}" onclick="window.__playAyah(${a.numberInSurah})">۝ ${a.numberInSurah}</span>`
-          ).join(' ');
+          
+          const text = chunk.map(a => {
+            const words = wordsByAyah[a.numberInSurah] || [];
+            const wordSpans = words
+              .filter(w => w.char_type_name === 'word' && w.audio_url)
+              .map(w => {
+                const audioKey = w.audio_url.replace('wbw/', '').replace('.mp3', '');
+                return `<span class="quran-word" data-audio="${audioKey}" onclick="window.__playWord(this)">${w.text_uthmani}</span>`;
+              });
+            
+            const ayahText = wordSpans.length > 0 ? wordSpans.join(' ') : a.text;
+            return `${ayahText} <span class="ayah-number" data-ayah="${a.numberInSurah}" onclick="window.__playAyah(${a.numberInSurah})">۝ ${a.numberInSurah}</span>`;
+          }).join(' ');
           
           pages.value.push({
             text,
@@ -429,7 +459,9 @@ createApp({
       isPlaying.value = false;
       playingAyahNumber.value = null;
       currentPlayingAyahIndex = -1;
+      currentRepeat.value = 0;
       document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
+      document.querySelectorAll('.quran-word.playing').forEach(el => el.classList.remove('playing'));
     };
 
     const playFromAyah = (ayahIndex) => {
@@ -506,6 +538,84 @@ createApp({
       });
     };
 
+    const playAyahOnce = (ayahNum) => {
+      if (!currentSurah.value || !allAyahs.value.length) return;
+      
+      const ayahIndex = allAyahs.value.findIndex(a => a.numberInSurah === ayahNum);
+      if (ayahIndex === -1) return;
+
+      stopAudio();
+
+      currentPlayingAyahIndex = ayahIndex;
+      const ayah = allAyahs.value[ayahIndex];
+
+      playingAyahNumber.value = ayah.numberInSurah;
+      isPlaying.value = true;
+
+      document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
+      const el = document.querySelector(`.ayah-number[data-ayah="${ayah.numberInSurah}"]`);
+      if (el) el.classList.add('playing');
+
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
+      currentAudio.addEventListener('ended', () => {
+        stopAudio();
+      });
+      currentAudio.addEventListener('error', () => {
+        stopAudio();
+      });
+      currentAudio.play().catch(e => {
+        console.log('Play error:', e);
+        stopAudio();
+      });
+    };
+
+    const playAyahRepeat = (ayahNum) => {
+      if (!currentSurah.value || !allAyahs.value.length) return;
+      
+      const ayahIndex = allAyahs.value.findIndex(a => a.numberInSurah === ayahNum);
+      if (ayahIndex === -1) return;
+
+      stopAudio();
+
+      currentPlayingAyahIndex = ayahIndex;
+      const ayah = allAyahs.value[ayahIndex];
+
+      playingAyahNumber.value = ayah.numberInSurah;
+      isPlaying.value = true;
+      currentRepeat.value = 0;
+
+      document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
+      const el = document.querySelector(`.ayah-number[data-ayah="${ayah.numberInSurah}"]`);
+      if (el) el.classList.add('playing');
+
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      const playOne = () => {
+        currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
+        currentAudio.addEventListener('ended', () => {
+          currentRepeat.value++;
+          playOne();
+        });
+        currentAudio.addEventListener('error', () => {
+          stopAudio();
+        });
+        currentAudio.play().catch(e => {
+          console.log('Play error:', e);
+          stopAudio();
+        });
+      };
+
+      playOne();
+    };
+
     const playAyah = (ayahNum) => {
       if (!currentSurah.value || !allAyahs.value.length) return;
       
@@ -517,7 +627,34 @@ createApp({
         return;
       }
 
-      playFromAyah(ayahIndex);
+      playAyahRepeat(ayahNum);
+    };
+
+    const playWord = (el) => {
+      const audioKey = el.getAttribute('data-audio');
+      if (!audioKey) return;
+
+      document.querySelectorAll('.quran-word.playing').forEach(w => w.classList.remove('playing'));
+      el.classList.add('playing');
+
+      if (currentAudio) {
+        currentAudio.pause();
+        currentAudio = null;
+      }
+
+      currentAudio = new Audio(`https://verses.quran.com/wbw/${audioKey}.mp3`);
+      currentAudio.addEventListener('ended', () => {
+        el.classList.remove('playing');
+        currentAudio = null;
+      });
+      currentAudio.addEventListener('error', () => {
+        el.classList.remove('playing');
+        currentAudio = null;
+      });
+      currentAudio.play().catch(e => {
+        console.log('Word play error:', e);
+        el.classList.remove('playing');
+      });
     };
 
     const playCurrentAyah = () => {
@@ -532,6 +669,23 @@ createApp({
       }
 
       playFromAyah(0);
+    };
+
+    const cycleRepeat = () => {
+      repeatCount.value = repeatCount.value === 0 ? 1 : 0;
+      if (repeatCount.value === 0) {
+        showToast(isArabic.value ? 'بدون تكرار' : 'No repeat', 'bi bi-arrow-repeat');
+      } else {
+        showToast(isArabic.value ? 'تكرار مستمر' : 'Continuous repeat', 'bi bi-arrow-repeat');
+      }
+      saveState();
+    };
+
+    const stopRepeat = () => {
+      repeatCount.value = 0;
+      stopAudio();
+      showToast(isArabic.value ? 'تم إيقاف التكرار' : 'Repeat stopped', 'bi bi-check-circle');
+      saveState();
     };
 
     const togglePlayPause = () => {
@@ -552,6 +706,7 @@ createApp({
     };
 
     window.__playAyah = playAyah;
+    window.__playWord = playWord;
 
     document.addEventListener('keydown', (e) => {
       if (e.key === 'ArrowLeft') nextPage();
@@ -582,12 +737,17 @@ createApp({
     });
 
     onMounted(async () => {
-      loadState();
-      await loadSurahs();
-      if (currentSurah.value) {
-        await loadSurah(currentSurah.value);
-      } else {
-        await loadSurah(1);
+      try {
+        loadState();
+        await loadSurahs();
+        if (currentSurah.value) {
+          await loadSurah(currentSurah.value);
+        } else {
+          await loadSurah(1);
+        }
+      } catch (error) {
+        console.error('App init error:', error);
+        loading.value = false;
       }
     });
 
@@ -619,6 +779,9 @@ createApp({
       readingArea,
       playingAyahNumber,
       isPlaying,
+      repeatCount,
+      currentRepeat,
+      playMode,
       currentReciter,
       currentSource,
       reciters: RECITERS,
@@ -640,6 +803,9 @@ createApp({
       togglePlayPause,
       stopAudio,
       playAyah,
+      playWord,
+      cycleRepeat,
+      stopRepeat,
       increaseFontSize,
       decreaseFontSize,
       increaseLineHeight,
