@@ -9,7 +9,7 @@
   <title>Quran App</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700&family=Scheherazade:wght@400;700&family=Naskh+Professional:wght@400;600&family=Nastaliq:wght@400&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
 <body class="theme-navy">
@@ -42,11 +42,71 @@
           <button class="btn-icon" :class="{ active: showTafsir }" @click="toggleTafsir">
             <i class="bi bi-journal-text"></i>
           </button>
+          <button class="btn-icon color-picker-btn" @click="showColorPicker = !showColorPicker">
+            <i class="bi bi-palette-fill"></i>
+          </button>
+          <button class="btn-icon font-picker-btn" @click="showFontPicker = !showFontPicker">
+            <i class="bi bi-type"></i>
+          </button>
         </div>
       </div>
     </header>
 
     <div class="sidebar-overlay" v-if="sidebarOpen" @click="closeSidebar"></div>
+
+        <div class="color-picker-dropdown" v-if="showColorPicker" @click="showColorPicker = false">
+      <div class="color-picker-inner" @click.stop>
+        <div class="color-option" :class="{ active: colorScheme === 'green' }" @click="setColor('green')">
+          <span class="color-dot color-green-dot"></span>
+          <span>أخضر</span>
+        </div>
+        <div class="color-option" :class="{ active: colorScheme === 'blue' }" @click="setColor('blue')">
+          <span class="color-dot color-blue-dot"></span>
+          <span>أزرق</span>
+        </div>
+        <div class="color-option" :class="{ active: colorScheme === 'red' }" @click="setColor('red')">
+          <span class="color-dot color-red-dot"></span>
+          <span>أحمر</span>
+        </div>
+        <div class="color-option" :class="{ active: colorScheme === 'brown' }" @click="setColor('brown')">
+          <span class="color-dot color-brown-dot"></span>
+          <span>بني</span>
+        </div>
+        <div class="color-option" :class="{ active: colorScheme === 'grey' }" @click="setColor('grey')">
+          <span class="color-dot color-grey-dot"></span>
+          <span>رمادي</span>
+        </div>
+        <div class="color-option" :class="{ active: colorScheme === 'purple' }" @click="setColor('purple')">
+          <span class="color-dot color-purple-dot"></span>
+          <span>بنفسجي</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="font-picker-dropdown" v-if="showFontPicker" @click="showFontPicker = false">
+      <div class="font-picker-inner" @click.stop>
+        <div class="font-option" :class="{ active: fontFamily === 'Amiri' }" @click="setFont('Amiri')">
+          <span class="font-preview" style="font-family: 'Amiri', serif;">أَمَرِي</span>
+          <span>أمري</span>
+        </div>
+        <div class="font-option" :class="{ active: fontFamily === 'Cairo' }" @click="setFont('Cairo')">
+          <span class="font-preview" style="font-family: 'Cairo', sans-serif;">أَمَرِي</span>
+          <span>القاهرة</span>
+        </div>
+        <div class="font-option" :class="{ active: fontFamily === 'Scheherazade' }" @click="setFont('Scheherazade')">
+          <span class="font-preview" style="font-family: 'Scheherazade', sans-serif;">أَمَرِي</span>
+          <span>شهرزاد</span>
+        </div>
+        <div class="font-option" :class="{ active: fontFamily === 'Naskh' }" @click="setFont('Naskh')">
+          <span class="font-preview" style="font-family: 'Traditional Arabic', serif;">أَمَرِي</span>
+          <span>نسخ</span>
+        </div>
+        <div class="font-option" :class="{ active: fontFamily === 'Uthman' }" @click="setFont('Uthman')">
+          <span class="font-preview" style="font-family: 'Nastaliq', cursive;">أَمَرِي</span>
+          <span>عثماني</span>
+        </div>
+      </div>
+    </div>
 
     <div class="main-container">
       <aside class="surah-sidebar" :class="{ show: sidebarOpen }">
@@ -198,6 +258,13 @@
             <button class="btn-stop" @click="stopAudio"><i class="bi bi-stop-fill"></i></button>
           </div>
           <div class="control-group">
+            <button class="btn-mode-select" @click="showModePanel = true">
+              <i :class="playModeIcon"></i>
+              <span>{{ playModeLabel }}</span>
+              <i class="bi bi-chevron-down"></i>
+            </button>
+          </div>
+          <div class="control-group">
             <button class="btn-reciter-select" @click="showReciterPanel = true">
               <i class="bi bi-mic-fill"></i>
               <span>{{ currentReciterName }}</span>
@@ -231,6 +298,41 @@
           <div v-if="filteredReciters.length === 0" class="empty-reciters">
             <i class="bi bi-search"></i>
             <p>{{ isArabic ? 'لا توجد نتائج' : 'No results found' }}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mode-overlay" v-if="showModePanel" @click="showModePanel = false">
+      <div class="mode-panel" @click.stop>
+        <div class="panel-header">
+          <h5>{{ isArabic ? 'وضع التشغيل' : 'Play Mode' }}</h5>
+          <button class="panel-close" @click="showModePanel = false"><i class="bi bi-x-lg"></i></button>
+        </div>
+        <div class="mode-list">
+          <div class="mode-item" :class="{ active: playMode === 'repeat' }" @click="setPlayMode('repeat')">
+            <i class="bi bi-repeat mode-icon"></i>
+            <div class="mode-info">
+              <span class="mode-name">{{ isArabic ? 'تكرار' : 'Repeat' }}</span>
+              <span class="mode-desc">{{ isArabic ? 'يكرر الآية حتى إيقافها' : 'Repeats ayah until stopped' }}</span>
+            </div>
+            <i class="bi bi-check2-circle mode-check" v-if="playMode === 'repeat'"></i>
+          </div>
+          <div class="mode-item" :class="{ active: playMode === 'continue' }" @click="setPlayMode('continue')">
+            <i class="bi bi-arrow-right-circle mode-icon"></i>
+            <div class="mode-info">
+              <span class="mode-name">{{ isArabic ? 'استمرار' : 'Continue' }}</span>
+              <span class="mode-desc">{{ isArabic ? 'يقرأ الآية مرة واحدة ويكمل' : 'Plays ayah once and continues' }}</span>
+            </div>
+            <i class="bi bi-check2-circle mode-check" v-if="playMode === 'continue'"></i>
+          </div>
+          <div class="mode-item" :class="{ active: playMode === 'once' }" @click="setPlayMode('once')">
+            <i class="bi bi-play-circle mode-icon"></i>
+            <div class="mode-info">
+              <span class="mode-name">{{ isArabic ? 'مرة واحدة' : 'Once' }}</span>
+              <span class="mode-desc">{{ isArabic ? 'يقرأ الآية فقط عند الضغط' : 'Plays ayah only on tap' }}</span>
+            </div>
+            <i class="bi bi-check2-circle mode-check" v-if="playMode === 'once'"></i>
           </div>
         </div>
       </div>
