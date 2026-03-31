@@ -3,175 +3,56 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-  <meta name="description" content="Quran App - قراءة القرآن الكريم مع تلاوة الأصوات">
-  <meta name="theme-color" content="#2c7a4d">
-  <meta name="color-scheme" content="light dark">
+  <meta name="theme-color" content="#1a1a2e">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-  <meta name="apple-mobile-web-app-title" content="القرآن">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="format-detection" content="telephone=no">
-  <meta http-equiv="X-UA-Compatible" content="IE=edge">
-  <title>Quran App - المصحف التفاعلي</title>
-  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
-  <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📖</text></svg>">
-  <link rel="manifest" href="manifest.json">
-  
+  <title>Quran App</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.rtl.min.css" rel="stylesheet">
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
-  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Amiri+Quran&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&family=Cairo:wght@400;500;600;700&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="css/styles.css">
 </head>
-<body class="light-theme">
-  <div id="app" :class="{ 'reading-mode': isReadingMode, 'sidebar-open': sidebarOpen, 'controls-visible': readingControlsVisible, 'reading-theme-sepia': readingTheme === 'sepia', 'reading-theme-dark': readingTheme === 'dark', 'reading-theme-night': readingTheme === 'night' }">
-     
-    <div class="mobile-loader" v-if="loading">
+<body class="theme-navy">
+  <div id="app">
+
+    <div class="mobile-loader" :class="{ active: loading }">
       <div class="loader-content">
-        <div class="quran-loader-icon">
-          <svg viewBox="0 0 100 100" class="spinner-svg">
-            <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="180" stroke-linecap="round"></circle>
-          </svg>
-        </div>
-        <p class="loader-text">{{ isArabic ? 'جاري التحميل...' : 'Loading...' }}</p>
-      </div>
-    </div>
-    
-    <div class="reading-top-bar" v-if="isReadingMode">
-      <button class="reading-top-btn" @click="exitReadingMode" :aria-label="isArabic ? 'الخروج' : 'Exit'">
-        <i class="bi bi-arrow-right"></i>
-      </button>
-      <div class="reading-surah-info">
-        <span class="reading-surah-name">{{ currentSurahName }}</span>
-        <span class="reading-page-label">{{ currentPageIndex + 1 }} / {{ totalPages }}</span>
-      </div>
-      <button class="reading-top-btn" @click="toggleReadingSettings" :aria-label="isArabic ? 'الإعدادات' : 'Settings'">
-        <i class="bi bi-gear"></i>
-      </button>
-    </div>
-
-    <div class="reading-settings-panel" v-if="isReadingMode && showReadingSettings">
-      <div class="settings-card">
-        <div class="settings-section">
-          <label class="settings-label">{{ isArabic ? 'النمط' : 'Theme' }}</label>
-          <div class="theme-options">
-            <button class="theme-option" :class="{ active: readingTheme === 'light' }" @click="setReadingTheme('light')">
-              <span class="theme-preview theme-light"></span>
-              <span>{{ isArabic ? 'فاتح' : 'Light' }}</span>
-            </button>
-            <button class="theme-option" :class="{ active: readingTheme === 'sepia' }" @click="setReadingTheme('sepia')">
-              <span class="theme-preview theme-sepia"></span>
-              <span>{{ isArabic ? 'سيبيا' : 'Sepia' }}</span>
-            </button>
-            <button class="theme-option" :class="{ active: readingTheme === 'dark' }" @click="setReadingTheme('dark')">
-              <span class="theme-preview theme-dark"></span>
-              <span>{{ isArabic ? 'داكن' : 'Dark' }}</span>
-            </button>
-            <button class="theme-option" :class="{ active: readingTheme === 'night' }" @click="setReadingTheme('night')">
-              <span class="theme-preview theme-night"></span>
-              <span>{{ isArabic ? 'ليلي' : 'Night' }}</span>
-            </button>
-          </div>
-        </div>
-        <div class="settings-section">
-          <label class="settings-label">{{ isArabic ? 'حجم الخط' : 'Font Size' }}</label>
-          <div class="font-size-control">
-            <button class="size-btn" @click="decreaseFontSize"><i class="bi bi-dash-lg"></i></button>
-            <input type="range" class="size-slider" min="18" max="56" step="2" v-model.number="fontSize">
-            <button class="size-btn" @click="increaseFontSize"><i class="bi bi-plus-lg"></i></button>
-          </div>
-          <div class="size-value">{{ fontSize }}px</div>
-        </div>
-        <div class="settings-section">
-          <label class="settings-label">{{ isArabic ? 'تباعد الأسطر' : 'Line Height' }}</label>
-          <div class="line-height-control">
-            <button class="size-btn" @click="decreaseLineHeight"><i class="bi bi-dash-lg"></i></button>
-            <input type="range" class="size-slider" min="1.8" max="3.2" step="0.2" v-model.number="lineHeight">
-            <button class="size-btn" @click="increaseLineHeight"><i class="bi bi-plus-lg"></i></button>
-          </div>
-          <div class="size-value">{{ lineHeight }}</div>
-        </div>
-        <div class="settings-section">
-          <label class="settings-label">{{ isArabic ? 'المحاذاة' : 'Alignment' }}</label>
-          <div class="align-options">
-            <button class="align-btn" :class="{ active: textAlign === 'center' }" @click="textAlign = 'center'">
-              <i class="bi bi-text-center"></i>
-              <span>{{ isArabic ? 'وسط' : 'Center' }}</span>
-            </button>
-            <button class="align-btn" :class="{ active: textAlign === 'justify' }" @click="textAlign = 'justify'">
-              <i class="bi bi-justify"></i>
-              <span>{{ isArabic ? 'ضبط' : 'Justify' }}</span>
-            </button>
-            <button class="align-btn" :class="{ active: textAlign === 'right' }" @click="textAlign = 'right'">
-              <i class="bi bi-text-right"></i>
-              <span>{{ isArabic ? 'يمين' : 'Right' }}</span>
-            </button>
-          </div>
-        </div>
+        <svg viewBox="0 0 100 100" class="spinner-svg">
+          <circle cx="50" cy="50" r="40" stroke="currentColor" stroke-width="4" fill="none" stroke-dasharray="180" stroke-linecap="round"></circle>
+        </svg>
+        <p>{{ isArabic ? 'جاري التحميل...' : 'Loading...' }}</p>
       </div>
     </div>
 
-    <div class="reading-controls" v-if="isReadingMode">
-      <div class="reading-controls-inner">
-        <button class="reading-control-btn" @click="prevPage">
-          <i class="bi bi-arrow-right"></i>
-          <span class="ctrl-label">{{ isArabic ? 'السابقة' : 'Prev' }}</span>
-        </button>
-        <button class="reading-control-btn" @click="decreaseFontSize">
-          <i class="bi bi-dash-circle"></i>
-        </button>
-        <div class="font-indicator">{{ fontSize }}px</div>
-        <button class="reading-control-btn" @click="increaseFontSize">
-          <i class="bi bi-plus-circle"></i>
-        </button>
-        <button class="reading-control-btn" @click="toggleTheme">
-          <i :class="isDark ? 'bi bi-sun' : 'bi bi-moon'"></i>
-        </button>
-        <button class="reading-control-btn" @click="nextPage">
-          <span class="ctrl-label">{{ isArabic ? 'التالية' : 'Next' }}</span>
-          <i class="bi bi-arrow-left"></i>
-        </button>
-      </div>
-    </div>
-
-    <div class="tap-zone tap-zone-right" v-if="isReadingMode" @click="prevPage"></div>
-    <div class="tap-zone tap-zone-left" v-if="isReadingMode" @click="nextPage"></div>
-
-    <button class="menu-toggle" @click="toggleSidebar" v-if="!isReadingMode" :aria-label="isArabic ? 'القائمة' : 'Menu'">
-      <i class="bi bi-list"></i>
-    </button>
-
-    <div class="sidebar-overlay" v-if="sidebarOpen" @click="closeSidebar"></div>
-
-    <header class="app-header" v-if="!isReadingMode">
+    <header class="app-header">
       <div class="header-container">
+        <button class="menu-toggle" @click="toggleSidebar">
+          <i class="bi bi-list"></i>
+        </button>
         <div class="header-brand">
           <h4>{{ isArabic ? 'القرآن الكريم' : 'Holy Quran' }}</h4>
         </div>
         <div class="header-actions">
-          <button class="btn-icon" @click="toggleTheme" :aria-label="isArabic ? 'تبديل الوضع' : 'Toggle theme'">
-            <i :class="isDark ? 'bi bi-sun' : 'bi bi-moon'"></i>
+          <button class="btn-icon" @click="toggleTheme">
+            <i :class="themeIcon"></i>
           </button>
-          <button class="btn-icon" @click="toggleLang" :aria-label="isArabic ? 'تغيير اللغة' : 'Change language'">
+          <button class="btn-icon" @click="toggleLang">
             <i class="bi bi-globe"></i>
           </button>
-          <button class="btn-icon btn-reading-toggle" :class="{ active: isReadingMode }" @click="toggleReadingMode" :aria-label="isArabic ? 'وضع القراءة' : 'Reading Mode'">
-            <i class="bi bi-book"></i>
+          <button class="btn-icon" :class="{ active: showTafsir }" @click="toggleTafsir">
+            <i class="bi bi-journal-text"></i>
           </button>
         </div>
       </div>
     </header>
 
-    <div class="reading-progress" v-if="!isReadingMode">
-      <div class="progress-bar-custom" :style="{ width: progressPercent + '%' }"></div>
-    </div>
+    <div class="sidebar-overlay" v-if="sidebarOpen" @click="closeSidebar"></div>
 
-    <div class="main-container" v-if="!isReadingMode">
+    <div class="main-container">
       <aside class="surah-sidebar" :class="{ show: sidebarOpen }">
         <div class="sidebar-header">
-          <h5 class="sidebar-title">{{ isArabic ? 'السور' : 'Surahs' }}</h5>
-          <button class="close-sidebar" @click="closeSidebar" :aria-label="isArabic ? 'إغلاق' : 'Close'">
-            <i class="bi bi-x-lg"></i>
-          </button>
+          <h5>{{ isArabic ? 'السور' : 'Surahs' }}</h5>
+          <button class="close-sidebar" @click="closeSidebar"><i class="bi bi-x-lg"></i></button>
         </div>
         <div class="sidebar-search">
           <div class="search-wrapper">
@@ -180,7 +61,7 @@
           </div>
         </div>
         <div class="surah-list">
-          <div v-for="surah in filteredSurahs" :key="surah.number" 
+          <div v-for="surah in filteredSurahs" :key="surah.number"
                class="surah-item" :class="{ active: currentSurah === surah.number }"
                @click="loadSurah(surah.number)">
             <div class="surah-number">{{ surah.number }}</div>
@@ -197,26 +78,15 @@
       </aside>
 
       <main class="content-area">
-        <div id="ayahContainer" class="content-scroll" ref="contentArea" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd">
-          <div v-if="loading" class="empty-state">
-            <div class="empty-icon">
-              <div class="spinner-border" role="status">
-                <span class="visually-hidden">Loading...</span>
-              </div>
-            </div>
-            <p class="empty-text">{{ isArabic ? 'جاري التحميل...' : 'Loading...' }}</p>
+        <div class="content-scroll">
+          <div v-if="!currentSurah && !loading" class="empty-state">
+            <i class="bi bi-book-half empty-icon"></i>
+            <h3>{{ isArabic ? 'اختر سورة' : 'Select Surah' }}</h3>
+            <p>{{ isArabic ? 'اضغط على أي سورة من القائمة لبدء القراءة' : 'Select a surah from the sidebar to start reading' }}</p>
           </div>
 
-          <div v-else-if="!currentSurah" class="empty-state">
-            <div class="empty-icon">
-              <i class="bi bi-book-half"></i>
-            </div>
-            <h3 class="empty-title">{{ isArabic ? 'اختر سورة' : 'Select Surah' }}</h3>
-            <p class="empty-desc">{{ isArabic ? 'اضغط على أي سورة من القائمة لبدء القراءة' : 'Select a surah from the sidebar to start reading' }}</p>
-          </div>
-
-          <div v-else>
-            <div v-for="(page, idx) in pages" :key="idx" class="quran-page" :class="{ 'page-active': idx === currentPageIndex, 'page-prev': idx === currentPageIndex - 1, 'page-next': idx === currentPageIndex + 1 }" :style="{ display: idx === currentPageIndex ? 'block' : 'none' }">
+          <div v-if="currentSurah">
+            <div v-for="(page, idx) in pages" :key="idx" class="quran-page" :style="{ display: idx === currentPageIndex ? 'block' : 'none' }">
               <div class="page-header">
                 <div class="page-info">
                   <div class="page-badge">
@@ -236,51 +106,101 @@
             <nav v-if="totalPages > 1" class="pagination-nav">
               <button class="pagination-btn" :disabled="currentPageIndex === 0" @click="prevPage">
                 <i class="bi bi-arrow-right"></i>
-                <span class="btn-text">{{ isArabic ? 'السابقة' : 'Previous' }}</span>
+                <span>{{ isArabic ? 'السابقة' : 'Previous' }}</span>
               </button>
               <div class="page-indicator">
-                <span>{{ currentPageIndex + 1 }}</span>
-                <span class="separator">/</span>
-                <span>{{ totalPages }}</span>
+                <span>{{ currentPageIndex + 1 }}</span> / <span>{{ totalPages }}</span>
               </div>
               <button class="pagination-btn" :disabled="currentPageIndex === totalPages - 1" @click="nextPage">
-                <span class="btn-text">{{ isArabic ? 'التالية' : 'Next' }}</span>
+                <span>{{ isArabic ? 'التالية' : 'Next' }}</span>
                 <i class="bi bi-arrow-left"></i>
               </button>
             </nav>
           </div>
         </div>
       </main>
+
+      <aside class="tafsir-panel" v-if="showTafsir">
+        <div class="tafsir-panel-header">
+          <div class="tafsir-panel-title">
+            <i class="bi bi-journal-text"></i>
+            <span>{{ isArabic ? 'التفسير' : 'Tafsir' }}</span>
+            <span class="tafsir-surah-name" v-if="currentSurahName">{{ currentSurahName }}</span>
+          </div>
+          <div class="tafsir-panel-actions">
+            <select class="form-select tafsir-select-sm" v-model="selectedTafsir" @change="loadTafsir">
+              <option value="ar.muyassar">التفسير الميسر</option>
+              <option value="ar.jalalayn">تفسير الجلالين</option>
+              <option value="ar.qurtubi">تفسير القرطبي</option>
+              <option value="ar.baghawi">تفسير البغوي</option>
+              <option value="ar.ibnkathir">تفسير ابن كثير</option>
+            </select>
+            <button class="close-tafsir-panel" @click="showTafsir = false">
+              <i class="bi bi-x-lg"></i>
+            </button>
+          </div>
+        </div>
+        <div class="tafsir-panel-content" v-if="tafsirData.length > 0">
+          <div class="surah-info-card" v-if="surahInfo">
+            <div class="info-card-header">
+              <i class="bi bi-info-circle-fill"></i>
+              <span>{{ isArabic ? 'معلومات السورة' : 'Surah Information' }}</span>
+            </div>
+            <div class="info-card-body">
+              <div class="info-row">
+                <span class="info-label">{{ isArabic ? 'مكان النزول' : 'Place of Revelation' }}</span>
+                <span class="info-value">
+                  <i class="bi bi-geo-alt-fill" :class="surahInfo.revelationType === 'meccan' ? 'makki' : 'madani'"></i>
+                  {{ surahInfo.revelationType === 'meccan' ? (isArabic ? 'مكة المكرمة' : 'Makkah') : (isArabic ? 'المدينة المنورة' : 'Madinah') }}
+                </span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">{{ isArabic ? 'ترتيب النزول' : 'Order of Revelation' }}</span>
+                <span class="info-value">{{ surahInfo.orderOfRevelation }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">{{ isArabic ? 'عدد الآيات' : 'Number of Ayahs' }}</span>
+                <span class="info-value">{{ surahInfo.ayahsCount }}</span>
+              </div>
+            </div>
+          </div>
+          <div v-for="item in tafsirData" :key="item.numberInSurah" class="tafsir-item" :class="{ 'tafsir-bismillah': item.isBismillah }">
+            <div class="tafsir-item-ayah">
+              <span class="tafsir-item-num" v-if="!item.isBismillah">{{ item.numberInSurah }}</span>
+              <span class="tafsir-item-num bismillah-num" v-else><i class="bi bi-star-fill"></i></span>
+              <span class="tafsir-item-text">{{ item.ayahText }}</span>
+            </div>
+            <div class="tafsir-item-body">
+              <div class="tafsir-item-source">{{ tafsirName }}</div>
+              <div class="tafsir-item-tafsir" v-html="item.text"></div>
+            </div>
+          </div>
+        </div>
+        <div v-else-if="tafsirLoading" class="tafsir-panel-loading">
+          <div class="spinner-border" role="status"></div>
+          <p>{{ isArabic ? 'جاري تحميل التفسير...' : 'Loading tafsir...' }}</p>
+        </div>
+        <div v-else class="tafsir-panel-empty">
+          <i class="bi bi-journal-text tafsir-empty-icon"></i>
+          <p>{{ isArabic ? 'اختر سورة لعرض التفسير' : 'Select a surah to view tafsir' }}</p>
+        </div>
+      </aside>
     </div>
 
-    <transition name="reading-page">
-      <div class="reading-page-container" v-if="isReadingMode && pages.length > 0" ref="readingArea" @touchstart="handleTouchStart" @touchmove="handleTouchMove" @touchend="handleTouchEnd" @click="handleReadingTap">
-        <div class="reading-page">
-          <transition :name="pageTransition" mode="out-in">
-            <div class="reading-content" :key="currentPageIndex">
-              <div class="quran-text reading-text" :style="{ fontSize: fontSize + 'px', lineHeight: lineHeight, textAlign: textAlign }" v-html="pages[currentPageIndex]?.text"></div>
-            </div>
-          </transition>
-        </div>
-      </div>
-    </transition>
-
-    <div class="controls-bar" v-if="!isReadingMode">
+    <div class="controls-bar">
       <div class="controls-container">
         <div class="controls-row">
           <div class="control-group control-actions">
             <button class="btn-play" @click="togglePlayPause" :disabled="!currentSurah" :class="{ playing: isPlaying }">
               <i :class="isPlaying ? 'bi bi-pause-fill' : 'bi bi-play-fill'"></i>
-              <span class="btn-text">{{ isPlaying ? (isArabic ? 'إيقاف مؤقت' : 'Pause') : (isArabic ? 'تشغيل' : 'Play') }}</span>
+              <span>{{ isPlaying ? (isArabic ? 'إيقاف' : 'Pause') : (isArabic ? 'تشغيل' : 'Play') }}</span>
             </button>
-            <button class="btn-stop" @click="stopAudio">
-              <i class="bi bi-stop-fill"></i>
-            </button>
+            <button class="btn-stop" @click="stopAudio"><i class="bi bi-stop-fill"></i></button>
           </div>
           <div class="control-group">
-            <button class="btn-reciter-select" @click="toggleReciterPanel">
+            <button class="btn-reciter-select" @click="showReciterPanel = true">
               <i class="bi bi-mic-fill"></i>
-              <span>{{ currentReciter.name }}</span>
+              <span>{{ currentReciterName }}</span>
               <i class="bi bi-chevron-down"></i>
             </button>
           </div>
@@ -288,31 +208,29 @@
       </div>
     </div>
 
-    <div class="reciter-panel-overlay" v-if="showReciterPanel" @click="showReciterPanel = false">
+    <div class="reciter-overlay" v-if="showReciterPanel" @click="showReciterPanel = false">
       <div class="reciter-panel" @click.stop>
         <div class="panel-header">
           <h5>{{ isArabic ? 'اختر القارئ' : 'Select Reciter' }}</h5>
           <button class="panel-close" @click="showReciterPanel = false"><i class="bi bi-x-lg"></i></button>
         </div>
-        <div class="reciter-list">
-          <div v-for="reciter in reciters" :key="reciter.id" 
-               class="reciter-option" :class="{ active: selectedReciter === reciter.id }"
-               @click="selectReciter(reciter.id)">
-            <i class="bi bi-mic-fill reciter-icon"></i>
-            <div class="reciter-info">
-              <div class="reciter-name">{{ reciter.name }}</div>
-              <div class="reciter-name-en">{{ reciter.nameEn }}</div>
-            </div>
-            <i class="bi bi-check2-circle reciter-check" v-if="selectedReciter === reciter.id"></i>
+        <div class="panel-search">
+          <div class="search-wrapper">
+            <i class="bi bi-search search-icon"></i>
+            <input type="text" class="form-control search-input" :placeholder="isArabic ? 'ابحث عن قارئ...' : 'Search reciter...'" v-model="reciterSearch">
           </div>
         </div>
-        <div class="panel-section-label">{{ isArabic ? 'مصدر الصوت' : 'Audio Source' }}</div>
-        <div class="source-options">
-          <div v-for="source in sources" :key="source.id"
-               class="source-option" :class="{ active: selectedSource === source.id }"
-               @click="selectSource(source.id)">
-            <span>{{ source.name }}</span>
-            <i class="bi bi-check2" v-if="selectedSource === source.id"></i>
+        <div class="reciter-list">
+          <div v-for="r in filteredReciters" :key="r.id"
+               class="reciter-item" :class="{ active: selectedReciter === r.id }"
+               @click="selectReciter(r.id)">
+            <i class="bi bi-mic-fill reciter-icon"></i>
+            <span class="reciter-name">{{ r.name }}</span>
+            <i class="bi bi-check2-circle reciter-check" v-if="selectedReciter === r.id"></i>
+          </div>
+          <div v-if="filteredReciters.length === 0" class="empty-reciters">
+            <i class="bi bi-search"></i>
+            <p>{{ isArabic ? 'لا توجد نتائج' : 'No results found' }}</p>
           </div>
         </div>
       </div>
@@ -330,12 +248,5 @@
 
   <script src="https://unpkg.com/vue@3/dist/vue.global.js"></script>
   <script src="js/app.js"></script>
-  <script>
-    if ('serviceWorker' in navigator) {
-      window.addEventListener('load', () => {
-        navigator.serviceWorker.register('sw.js');
-      });
-    }
-  </script>
 </body>
 </html>
