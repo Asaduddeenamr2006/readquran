@@ -240,7 +240,12 @@
               <span class="tafsir-item-text">{{ item.ayahText }}</span>
             </div>
             <div class="tafsir-item-body">
-              <div class="tafsir-item-source">{{ tafsirName }}</div>
+              <div class="tafsir-item-header">
+                <div class="tafsir-item-source">{{ tafsirName }}</div>
+                <button class="tafsir-speak-btn" :class="{ speaking: speakingTafsirIndex === index }" @click="toggleTafsirSpeech(index, item.text)" :disabled="isTafsirLoading" :title="isArabic ? 'استمع للتفسير' : 'Listen to tafsir'">
+                  <i :class="isTafsirLoading && speakingTafsirIndex === index ? 'bi bi-hourglass-split' : speakingTafsirIndex === index ? 'bi bi-pause-fill' : 'bi bi-volume-up-fill'"></i>
+                </button>
+              </div>
               <div class="tafsir-item-tafsir" v-html="item.text"></div>
             </div>
             <div class="tafsir-divider" v-if="index < tafsirData.length - 1"></div>

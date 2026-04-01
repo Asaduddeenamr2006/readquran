@@ -98,6 +98,8 @@ createApp({
     const selectedTafsir = ref('ar.muyassar');
     const tafsirData = ref([]);
     const tafsirLoading = ref(false);
+    const speakingTafsirIndex = ref(-1);
+    const isTafsirLoading = ref(false);
     const surahInfo = ref(null);
     const showSettingsPanel = ref(false);
     const playMode = ref('continue');
@@ -428,6 +430,75 @@ createApp({
       }
     };
 
+    const toggleTafsirSpeech = (index, text) => {
+      if (speakingTafsirIndex.value === index) {
+        speechSynthesis.cancel();
+        if (window.__tafsirAudio) {
+          window.__tafsirAudio.pause();
+          window.__tafsirAudio = null;
+        }
+        speakingTafsirIndex.value = -1;
+        isTafsirLoading.value = false;
+        return;
+      }
+      
+      speechSynthesis.cancel();
+      if (window.__tafsirAudio) {
+        window.__tafsirAudio.pause();
+        window.__tafsirAudio = null;
+      }
+      
+      const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+      if (!cleanText) return;
+      
+      speakingTafsirIndex.value = index;
+      isTafsirLoading.value = true;
+      
+      // Try Google Translate TTS with ar locale
+      const encodedText = encodeURIComponent(cleanText.substring(0, 150));
+      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText}`;
+      
+      const audio = new Audio();
+      window.__tafsirAudio = audio;
+      
+      audio.addEventListener('canplaythrough', () => {
+        isTafsirLoading.value = false;
+        audio.play();
+      });
+      
+      audio.addEventListener('ended', () => {
+        if (cleanText.length > 150) {
+          const encodedText2 = encodeURIComponent(cleanText.substring(150));
+          const url2 = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText2}`;
+          audio.src = url2;
+        } else {
+          speakingTafsirIndex.value = -1;
+          isTafsirLoading.value = false;
+          window.__tafsirAudio = null;
+        }
+      });
+      
+      audio.addEventListener('error', () => {
+        isTafsirLoading.value = false;
+        // Fallback with optimized male voice settings
+        const utterance = new SpeechSynthesisUtterance(cleanText);
+        utterance.lang = 'ar-SA';
+        utterance.rate = 0.8;
+        utterance.pitch = 0.6;
+        utterance.volume = 1;
+        
+        const voices = speechSynthesis.getVoices();
+        const maleVoice = voices.find(v => v.lang.startsWith('ar'));
+        if (maleVoice) utterance.voice = maleVoice;
+        
+        utterance.onend = () => { speakingTafsirIndex.value = -1; isTafsirLoading.value = false; };
+        utterance.onerror = () => { speakingTafsirIndex.value = -1; isTafsirLoading.value = false; };
+        speechSynthesis.speak(utterance);
+      });
+      
+      audio.src = url;
+    };
+
     const stopAudio = () => {
       if (currentAudio) { currentAudio.pause(); currentAudio.currentTime = 0; currentAudio = null; }
       isPlaying.value = false;
@@ -649,13 +720,13 @@ createApp({
       showColorPicker, showFontPicker, selectedReciter, currentSurah, currentPageIndex,
       surahs, pages, allAyahs, toasts, fontSize,
       playingAyahNumber, isPlaying, showTafsir, selectedTafsir, tafsirData,
-      tafsirLoading, surahInfo, showSettingsPanel, playMode, RECITERS,
+      tafsirLoading, speakingTafsirIndex, isTafsirLoading, surahInfo, showSettingsPanel, playMode, RECITERS,
       currentReciterName, currentSurahName, filteredSurahs,
       totalPages, tafsirName,
       toggleTheme, toggleLang, setColor, setFont, toggleColorPicker, toggleFontPicker, toggleFontSize, resetFontSize, setPlayMode,
       toggleSidebar, closeSidebar, prevPage, nextPage, loadSurah,
       togglePlayPause, stopAudio, playAyah, playWord,
-      selectReciter, loadTafsir, toggleTafsir,
+      selectReciter, loadTafsir, toggleTafsir, toggleTafsirSpeech,
       handleTouchStart, handleTouchMove, handleTouchEnd
     };
   }
