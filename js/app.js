@@ -430,63 +430,126 @@ createApp({
       }
     };
 
-    const toggleTafsirSpeech = (index, text) => {
-      if (speakingTafsirIndex.value === index) {
-        speechSynthesis.cancel();
-        if (window.__tafsirAudio) {
-          window.__tafsirAudio.pause();
-          window.__tafsirAudio = null;
-        }
-        speakingTafsirIndex.value = -1;
-        isTafsirLoading.value = false;
-        return;
-      }
-      
-      speechSynthesis.cancel();
-      if (window.__tafsirAudio) {
-        window.__tafsirAudio.pause();
-        window.__tafsirAudio = null;
-      }
-      
-      const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-      if (!cleanText) return;
-      
-      speakingTafsirIndex.value = index;
-      isTafsirLoading.value = true;
-      
-      // Use Google Translate TTS (free, works in most browsers)
-      const encodedText = encodeURIComponent(cleanText.substring(0, 150));
-      const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText}`;
-      
-      const audio = new Audio();
-      window.__tafsirAudio = audio;
-      
-      audio.oncanplaythrough = () => {
-        isTafsirLoading.value = false;
-        audio.play().catch(() => {
-          // If autoplay fails, try Web Speech API fallback
-          useFallbackSpeech(index, cleanText);
-        });
-      };
-      
-      audio.onended = () => {
-        if (cleanText.length > 150) {
-          // Play second chunk
-          const encodedText2 = encodeURIComponent(cleanText.substring(150));
-          audio.src = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText2}`;
-        } else {
-          speakingTafsirIndex.value = -1;
-          isTafsirLoading.value = false;
-          window.__tafsirAudio = null;
-        }
-      };
-      
-      audio.onerror = () => {
-        useFallbackSpeech(index, cleanText);
-      };
-      
-      audio.src = url;
-    };
+     const toggleTafsirSpeech = (index, text) => {
+       if (speakingTafsirIndex.value === index) {
+         speechSynthesis.cancel();
+         if (window.__tafsirAudio) {
+           window.__tafsirAudio.pause();
+           window.__tafsirAudio = null;
+         }
+         speakingTafsirIndex.value = -1;
+         isTafsirLoading.value = false;
+         return;
+       }
+       
+       speechSynthesis.cancel();
+       if (window.__tafsirAudio) {
+         window.__tafsirAudio.pause();
+         window.__tafsirAudio = null;
+       }
+       
+       // Preserve more natural text structure while cleaning HTML
+       const cleanText = text.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+       if (!cleanText) return;
+       
+       speakingTafsirIndex.value = index;
+       isTafsirLoading.value = true;
+       
+       // Try Google Translate TTS first (more natural)
+       tryGoogleTTS(index, cleanText).catch(() => {
+         // Fallback to Web Speech API if Google TTS fails
+         useFallbackSpeech(index, cleanText);
+       });
+     };
+     
+     const tryGoogleTTS = (index, text) => {
+       return new Promise((resolve, reject) => {
+         // Split text into chunks that work well with TTS (respect sentence boundaries)
+         const chunks = splitTextIntoChunks(text, 200);
+         
+         if (chunks.length === 0) {
+           reject();
+           return;
+         }
+         
+         let chunkIndex = 0;
+         
+         const playNextChunk = () => {
+           if (chunkIndex >= chunks.length || speakingTafsirIndex.value !== index) {
+             speakingTafsirIndex.value = -1;
+             isTafsirLoading.value = false;
+             window.__tafsirAudio = null;
+             resolve();
+             return;
+           }
+           
+           const chunk = chunks[chunkIndex];
+           const encodedText = encodeURIComponent(chunk);
+           const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText}`;
+           
+           const audio = new Audio();
+           window.__tafsirAudio = audio;
+           
+           audio.onend = () => {
+             chunkIndex++;
+             // Small pause between chunks for natural flow
+             setTimeout(playNextChunk, 300);
+           };
+           
+           audio.onerror = () => {
+             reject();
+           };
+           
+           audio.src = url;
+           audio.play().catch(reject);
+         };
+         
+         playNextChunk();
+       });
+     };
+     
+     const splitTextIntoChunks = (text, maxLength) => {
+       if (text.length <= maxLength) return [text];
+       
+       const chunks = [];
+       let currentChunk = '';
+       
+       // Split by sentences first for more natural breaks
+       const sentences = text.split(/[.،؛:!?]\s+/);
+       
+       for (const sentence of sentences) {
+         if ((currentChunk + sentence).length <= maxLength) {
+           currentChunk += (currentChunk ? ' ' : '') + sentence;
+         } else {
+           if (currentChunk) {
+             chunks.push(currentChunk);
+           }
+           currentChunk = sentence;
+           
+           // If single sentence is too long, split by words
+           if (sentence.length > maxLength) {
+             const words = sentence.split(' ');
+             currentChunk = '';
+             for (const word of words) {
+               if ((currentChunk + word).length <= maxLength) {
+                 currentChunk += (currentChunk ? ' ' : '') + word;
+               } else {
+                 if (currentChunk) {
+                   chunks.push(currentChunk);
+                 }
+                 currentChunk = word;
+               }
+             }
+           }
+         }
+       }
+       
+       if (currentChunk) {
+         chunks.push(currentChunk);
+       }
+       
+       return chunks;
+     };
     
     const useFallbackSpeech = (index, text) => {
       isTafsirLoading.value = false;
