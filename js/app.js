@@ -455,17 +455,17 @@ createApp({
        speakingTafsirIndex.value = index;
        isTafsirLoading.value = true;
        
-       // Try Google Translate TTS first (more natural)
-       tryGoogleTTS(index, cleanText).catch(() => {
+       // Try Google Translate TTS first (more natural) with CORS handling
+       tryGoogleTTSCORS(index, cleanText).catch(() => {
          // Fallback to Web Speech API if Google TTS fails
          useFallbackSpeech(index, cleanText);
        });
      };
      
-     const tryGoogleTTS = (index, text) => {
+     const tryGoogleTTSCORS = (index, text) => {
        return new Promise((resolve, reject) => {
          // Split text into chunks that work well with TTS (respect sentence boundaries)
-         const chunks = splitTextIntoChunks(text, 200);
+         const chunks = splitTextIntoChunks(text, 150); // Reduced chunk size for better reliability
          
          if (chunks.length === 0) {
            reject();
@@ -473,6 +473,7 @@ createApp({
          }
          
          let chunkIndex = 0;
+         let audioPromise = Promise.resolve();
          
          const playNextChunk = () => {
            if (chunkIndex >= chunks.length || speakingTafsirIndex.value !== index) {
@@ -485,23 +486,42 @@ createApp({
            
            const chunk = chunks[chunkIndex];
            const encodedText = encodeURIComponent(chunk);
-           const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText}`;
            
-           const audio = new Audio();
-           window.__tafsirAudio = audio;
+           // Use multiple TTS services to avoid CORS issues
+           const urls = [
+             `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText}`,
+             `https://translate.googleapis.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText}`
+           ];
            
-           audio.onend = () => {
-             chunkIndex++;
-             // Small pause between chunks for natural flow
-             setTimeout(playNextChunk, 300);
+           // Try each URL until one works
+           const tryURL = (urlIndex) => {
+             if (urlIndex >= urls.length) {
+               reject();
+               return;
+             }
+             
+             const audio = new Audio();
+             window.__tafsirAudio = audio;
+             
+             audio.onend = () => {
+               chunkIndex++;
+               // Small pause between chunks for natural flow
+               setTimeout(playNextChunk, 200);
+             };
+             
+             audio.onerror = () => {
+               // Try next URL
+               tryURL(urlIndex + 1);
+             };
+             
+             audio.src = urls[urlIndex];
+             audio.play().catch(() => {
+               // Try next URL on play error
+               tryURL(urlIndex + 1);
+             });
            };
            
-           audio.onerror = () => {
-             reject();
-           };
-           
-           audio.src = url;
-           audio.play().catch(reject);
+           tryURL(0);
          };
          
          playNextChunk();
