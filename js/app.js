@@ -63,11 +63,11 @@ const SURAHS_PER_PAGE = {
   46: 6, 47: 5, 48: 5, 49: 4, 50: 5, 51: 3, 52: 4, 53: 3, 54: 4,
   55: 4, 56: 4, 57: 4, 58: 4, 59: 4, 60: 4, 61: 4, 62: 3, 63: 3,
   64: 3, 65: 3, 66: 3, 67: 4, 68: 4, 69: 4, 70: 4, 71: 4, 72: 4,
-  73: 3, 74: 4, 75: 4, 76: 4, 77: 4, 78: 4, 79: 4, 80: 3, 81: 3,
-  82: 3, 83: 4, 84: 4, 85: 4, 86: 3, 87: 3, 88: 4, 89: 4, 90: 3,
-  91: 3, 92: 3, 93: 3, 94: 3, 95: 3, 96: 3, 97: 3, 98: 4, 99: 3,
-  100: 3, 101: 3, 102: 3, 103: 3, 104: 3, 105: 3, 106: 3, 107: 3, 108: 3,
-  109: 3, 110: 3, 111: 3, 112: 3, 113: 3, 114: 3
+  73: 3, 74: 4, 75: 4, 76: 4, 77: 4, 78: 3, 79: 2, 80: 2, 81: 2,
+  82: 2, 83: 2, 84: 2, 85: 2, 86: 1, 87: 1, 88: 2, 89: 2, 90: 1,
+  91: 1, 92: 1, 93: 1, 94: 1, 95: 1, 96: 1, 97: 1, 98: 1, 99: 1,
+  100: 1, 101: 1, 102: 1, 103: 1, 104: 1, 105: 1, 106: 1, 107: 1, 108: 1,
+  109: 1, 110: 1, 111: 1, 112: 1, 113: 1, 114: 1
 };
 
 const THEMES = ['theme-navy', 'theme-black', 'theme-white'];
@@ -204,6 +204,26 @@ createApp({
       fontFamily.value = font;
       document.documentElement.style.setProperty('--quran-font', font);
       showFontPicker.value = false;
+      saveState();
+    };
+
+    const toggleColorPicker = () => {
+      showFontPicker.value = false;
+      showColorPicker.value = !showColorPicker.value;
+    };
+
+    const toggleFontPicker = () => {
+      showColorPicker.value = false;
+      showFontPicker.value = !showFontPicker.value;
+    };
+
+    const toggleFontSize = (delta) => {
+      fontSize.value = Math.max(18, Math.min(50, fontSize.value + delta));
+      saveState();
+    };
+
+    const resetFontSize = () => {
+      fontSize.value = 28;
       saveState();
     };
 
@@ -632,7 +652,7 @@ createApp({
       tafsirLoading, surahInfo, showSettingsPanel, playMode, RECITERS,
       currentReciterName, currentSurahName, filteredSurahs,
       totalPages, tafsirName,
-      toggleTheme, toggleLang, setColor, setFont, setPlayMode,
+      toggleTheme, toggleLang, setColor, setFont, toggleColorPicker, toggleFontPicker, toggleFontSize, resetFontSize, setPlayMode,
       toggleSidebar, closeSidebar, prevPage, nextPage, loadSurah,
       togglePlayPause, stopAudio, playAyah, playWord,
       selectReciter, loadTafsir, toggleTafsir,

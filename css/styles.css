@@ -228,6 +228,8 @@ body {
 }
 .btn-icon:hover { background: var(--primary); color: white; border-color: var(--primary); }
 .btn-icon.active { background: var(--primary); color: white; border-color: var(--primary); }
+.font-size-btn { width: auto; padding: 0 12px; font-size: 0.85rem; }
+.font-size-label { font-weight: 700; font-size: 0.85rem; }
 
 .menu-toggle {
   display: none;
@@ -261,8 +263,6 @@ body {
   display: flex;
   min-height: calc(100vh - var(--header-h) - var(--controls-h) - var(--safe-top) - var(--safe-bottom));
   min-height: calc(100dvh - var(--header-h) - var(--controls-h) - var(--safe-top) - var(--safe-bottom));
-  max-width: 1400px;
-  margin: 0 auto;
   width: 100%;
 }
 
@@ -349,7 +349,7 @@ body {
 .surah-item.active .ayah-label { color: rgba(255,255,255,0.7); }
 
 .content-area { flex: 1; min-width: 0; padding: 20px; }
-.content-scroll { max-width: 900px; margin: 0 auto; }
+.content-scroll { width: 100%; }
 .empty-state { display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 60px 20px; text-align: center; }
 .empty-icon { font-size: 4rem; color: var(--primary); margin-bottom: 20px; }
 .empty-state h3 { font-size: 1.5rem; font-weight: 700; margin-bottom: 12px; }
@@ -717,7 +717,7 @@ body {
 }
 .empty-reciters i { font-size: 2rem; }
 
-/* TAFSIR PANEL */
+/* TAFSIR PANEL - ARTICLE STYLE */
 .tafsir-panel {
   position: fixed;
   top: 0;
@@ -731,52 +731,54 @@ body {
   animation: fadeIn 0.3s ease;
 }
 .tafsir-panel-header {
-  background: var(--header-bg);
-  backdrop-filter: blur(20px);
-  box-shadow: var(--shadow-sm);
-  padding: 12px 20px;
-  padding-top: calc(12px + var(--safe-top));
+  background: #1f2d3d;
+  color: #fff;
+  padding: 18px 24px;
+  padding-top: calc(18px + var(--safe-top));
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: 16px;
   flex-shrink: 0;
+  font-size: 22px;
 }
-.tafsir-panel-title { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; color: var(--primary); }
-.tafsir-surah-name { font-family: 'Amiri', serif; font-size: 1rem; color: var(--text-muted); font-weight: 400; }
+.tafsir-panel-title { display: flex; align-items: center; gap: 10px; font-size: 1.2rem; font-weight: 700; color: #fff; }
+.tafsir-surah-name { font-family: 'Amiri', serif; font-size: 1rem; color: rgba(255,255,255,0.7); font-weight: 400; margin-right: 8px; }
 .tafsir-panel-actions { display: flex; align-items: center; gap: 10px; }
 .tafsir-select-sm {
-  padding: 8px 32px 8px 14px;
-  border: 1px solid var(--border);
-  border-radius: var(--radius-full);
-  background: var(--card-bg);
-  color: var(--text);
-  font-size: 0.85rem;
+  padding: 10px 32px 10px 14px;
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 6px;
+  background: rgba(255,255,255,0.1);
+  color: #fff;
+  font-size: 0.9rem;
   cursor: pointer;
-  max-width: 180px;
+  min-width: 150px;
 }
+.tafsir-select-sm option { background: #1f2d3d; color: #fff; }
 .tafsir-select-sm:focus { outline: none; border-color: var(--primary); }
 .close-tafsir-panel {
-  background: var(--danger);
+  background: #e74c3c;
   border: none;
   color: white;
-  width: 36px;
-  height: 36px;
-  border-radius: 50%;
+  width: 38px;
+  height: 38px;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   font-size: 1rem;
+  transition: all 0.15s ease;
 }
-.close-tafsir-panel:hover { background: #c82333; }
+.close-tafsir-panel:hover { background: #c0392b; }
 
 .btn-tafsir-speak {
   background: var(--primary);
   color: white;
   border: none;
   padding: 8px 16px;
-  border-radius: var(--radius-full);
+  border-radius: 6px;
   font-size: 0.85rem;
   font-weight: 600;
   cursor: pointer;
@@ -787,47 +789,47 @@ body {
 }
 .btn-tafsir-speak:hover { background: var(--primary-light); }
 .btn-tafsir-speak.speaking { background: var(--accent); color: var(--primary-dark); animation: pulse 1.5s ease infinite; }
-@keyframes pulse {
-  0%, 100% { box-shadow: 0 0 0 0 rgba(255,215,0,0.4); }
-  50% { box-shadow: 0 0 0 8px rgba(255,215,0,0); }
-}
 
-.tafsir-panel-content { flex: 1; overflow-y: auto; padding: 20px; max-width: 900px; margin: 0 auto; width: 100%; }
+.tafsir-panel-content { flex: 1; overflow-y: auto; padding: 30px 40px; max-width: 100%; margin: 0; width: 100%; background: var(--bg); }
 .surah-info-card {
   background: linear-gradient(135deg, var(--primary), var(--primary-dark));
-  border-radius: var(--radius-lg);
-  padding: 20px;
-  margin-bottom: 20px;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 25px;
   color: white;
-  box-shadow: var(--shadow-md);
+  box-shadow: var(--shadow-sm);
 }
-.info-card-header { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; margin-bottom: 16px; padding-bottom: 12px; border-bottom: 1px solid rgba(255,255,255,0.2); }
-.info-card-body { display: flex; flex-direction: column; gap: 10px; }
-.info-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: var(--radius-sm); }
+.info-card-header { display: flex; align-items: center; gap: 10px; font-size: 1.1rem; font-weight: 700; margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px solid rgba(255,255,255,0.2); }
+.info-card-body { display: flex; flex-direction: column; gap: 8px; }
+.info-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: rgba(255,255,255,0.1); border-radius: 5px; }
 .info-label { font-size: 0.85rem; opacity: 0.8; }
 .info-value { font-weight: 700; font-size: 0.9rem; display: flex; align-items: center; gap: 6px; }
 .info-value i.makki { color: #ffd700; }
 .info-value i.madani { color: #4fc3f7; }
 
 .tafsir-item {
-  background: var(--card-bg);
-  border-radius: var(--radius-lg);
-  padding: 24px;
-  margin-bottom: 16px;
-  box-shadow: var(--shadow-sm);
-  border: 1px solid var(--border);
+  background: transparent;
+  border-radius: 0;
+  padding: 0;
+  margin-bottom: 0;
+  box-shadow: none;
+  border: none;
+  transition: none;
 }
-.tafsir-item:hover { box-shadow: var(--shadow-md); border-color: var(--primary); }
-.tafsir-item.tafsir-bismillah { background: linear-gradient(135deg, var(--card-bg), rgba(44,122,77,0.05)); border-color: var(--primary); border-width: 2px; }
-.tafsir-item-ayah { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 14px; padding-bottom: 14px; border-bottom: 1px solid var(--border); }
-.tafsir-item-num { background: var(--primary); color: white; min-width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.85rem; font-weight: 700; flex-shrink: 0; }
-.bismillah-num { background: var(--accent) !important; color: var(--primary-dark) !important; }
-.tafsir-item-text { font-family: 'Amiri', serif; font-size: 1.3rem; line-height: 2; color: var(--text); direction: rtl; }
-.tafsir-item.tafsir-bismillah .tafsir-item-text { font-size: 1.4rem; color: var(--primary); font-family: 'Amiri Quran', 'Amiri', serif; }
-.tafsir-item-body { padding-right: 48px; }
-.tafsir-item-source { font-size: 0.8rem; color: var(--primary); font-weight: 700; margin-bottom: 8px; }
-.tafsir-item-source::before { content: ''; display: inline-block; width: 4px; height: 14px; background: var(--primary); border-radius: 2px; margin-left: 6px; vertical-align: middle; }
-.tafsir-item-tafsir { font-size: 1rem; line-height: 2; color: var(--text); text-align: justify; direction: rtl; }
+.tafsir-item:hover { box-shadow: none; border-color: transparent; }
+.tafsir-item.tafsir-bismillah { background: transparent; border: none; }
+.tafsir-item-ayah { display: block; margin: 25px 0 10px; }
+.tafsir-item-num { display: none; }
+.tafsir-item-text { font-family: 'Amiri', serif; font-size: 28px; line-height: 2.2; color: var(--text); font-weight: 700; direction: rtl; display: inline; text-align: right; }
+.tafsir-item.tafsir-bismillah .tafsir-item-text { font-size: 30px; font-family: 'Amiri', serif; color: var(--primary); }
+.tafsir-item-body { padding-right: 0; }
+.tafsir-item-source { display: none; }
+.tafsir-item-tafsir { font-family: 'Scheherazade New', 'Scheherazade', serif; font-size: 24px; font-weight: 400; line-height: 2.4; color: var(--text); text-align: justify; direction: rtl; margin-bottom: 20px; }
+
+.tafsir-divider {
+  border-top: 1px solid var(--border);
+  margin: 25px 0;
+}
 
 .tafsir-panel-loading,
 .tafsir-panel-empty { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 16px; color: var(--text-muted); padding: 40px; }
@@ -870,6 +872,17 @@ body {
   .header-container { padding: 10px 16px; }
   .header-brand h4 { font-size: 1.1rem; }
   .btn-icon { width: 36px; height: 36px; font-size: 1rem; }
+  .tafsir-panel-header { padding: 14px 16px; padding-top: calc(14px + var(--safe-top)); flex-wrap: wrap; font-size: 18px; }
+  .tafsir-panel-title { font-size: 1rem; }
+  .tafsir-select-sm { padding: 8px 28px 8px 10px; font-size: 0.8rem; min-width: auto; width: 130px; }
+  .tafsir-panel-content { padding: 20px 16px; }
+  .tafsir-item-text { font-size: 24px; line-height: 2; }
+  .tafsir-item.tafsir-bismillah .tafsir-item-text { font-size: 26px; }
+  .tafsir-item-tafsir { font-size: 21px; line-height: 2.2; }
+  .tafsir-divider { margin: 20px 0; }
+  .surah-info-card { padding: 14px; margin-bottom: 20px; }
+  .info-card-header { font-size: 1rem; margin-bottom: 10px; padding-bottom: 8px; }
+  .info-row { padding: 6px 10px; }
   .surah-sidebar {
     position: fixed;
     top: 0;
@@ -923,6 +936,10 @@ body {
   .page-indicator { padding: 4px 10px; font-size: 0.8rem; }
   .surah-sidebar { width: 100%; max-width: none; }
   .reciter-panel { max-height: 80vh; padding: 16px; }
+  .tafsir-panel-content { padding: 16px 12px; }
+  .tafsir-item-text { font-size: 22px; }
+  .tafsir-item-tafsir { font-size: 19px; }
+  .tafsir-select-sm { max-width: 140px; font-size: 0.75rem; padding: 6px 28px 6px 10px; }
 }
 
 @media (max-width: 360px) {
@@ -930,6 +947,9 @@ body {
   .header-container { padding: 8px 12px; }
   .content-area { padding: 6px; }
   .quran-page { padding: 12px 10px; }
+  .tafsir-panel-header { padding: 10px 12px; }
+  .tafsir-item-text { font-size: 1rem; }
+  .tafsir-item-tafsir { font-size: 0.85rem; }
 }
 
 @media (prefers-reduced-motion: reduce) {
