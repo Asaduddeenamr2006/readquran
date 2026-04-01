@@ -95,7 +95,7 @@ createApp({
     const playingAyahNumber = ref(null);
     const isPlaying = ref(false);
     const showTafsir = ref(false);
-    const selectedTafsir = ref('ar.muyassar');
+     const selectedTafsir = ref('ar.qurtubi');
     const tafsirData = ref([]);
     const tafsirLoading = ref(false);
     const surahInfo = ref(null);
@@ -404,14 +404,14 @@ createApp({
           });
         });
         tafsirData.value = result;
-        if (typeof gsap !== 'undefined') {
-          setTimeout(() => {
-            gsap.fromTo('.tafsir-card',
-              { y: 30, opacity: 0 },
-              { y: 0, opacity: 1, duration: 0.3, stagger: 0.08, ease: 'power2.out' }
-            );
-          }, 100);
-        }
+       if (typeof gsap !== 'undefined') {
+         setTimeout(() => {
+           gsap.fromTo('.tafsir-item',
+             { y: 30, opacity: 0 },
+             { y: 0, opacity: 1, duration: 0.3, stagger: 0.08, ease: 'power2.out' }
+           );
+         }, 100);
+       }
       } catch (e) {
         console.error('Tafsir error:', e);
         tafsirData.value = [];
@@ -425,31 +425,36 @@ createApp({
       if (showTafsir.value && currentSurah.value && tafsirData.value.length === 0) {
         loadTafsir();
       }
-      if (typeof gsap !== 'undefined') {
-        if (showTafsir.value) {
-          gsap.fromTo('.tafsir-modal-container', 
-            { y: '100%', opacity: 0 },
-            { y: '0%', opacity: 1, duration: 0.5, ease: 'power3.out' }
-          );
-          gsap.fromTo('.tafsir-card',
-            { y: 50, opacity: 0 },
-            { y: 0, opacity: 1, duration: 0.4, stagger: 0.1, ease: 'power2.out', delay: 0.3 }
-          );
-        }
-      }
+       if (typeof gsap !== 'undefined') {
+         if (showTafsir.value) {
+           gsap.fromTo('.tafsir-section', 
+             { y: '100%', opacity: 0 },
+             { y: '0%', opacity: 1, duration: 0.5, ease: 'power3.out' }
+           );
+           gsap.fromTo('.tafsir-item',
+             { y: 50, opacity: 0 },
+             { y: 0, opacity: 1, duration: 0.4, stagger: 0.1, ease: 'power2.out', delay: 0.3 }
+           );
+         }
+       }
     };
 
-    const stopAudio = () => {
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.src = '';
-        currentAudio = null;
-      }
-      isPlaying.value = false;
-      playingAyahNumber.value = null;
-      currentPlayingAyahIndex = -1;
-      document.querySelectorAll('.ayah-number.playing, .quran-word.playing').forEach(el => el.classList.remove('playing'));
-    };
+     const stopAudio = () => {
+       if (currentAudio) {
+         // Clean up event listeners if they exist
+         if (currentAudio._cleanup) {
+           currentAudio._cleanup();
+           currentAudio._cleanup = null;
+         }
+         currentAudio.pause();
+         currentAudio.src = '';
+         currentAudio = null;
+       }
+       isPlaying.value = false;
+       playingAyahNumber.value = null;
+       currentPlayingAyahIndex = -1;
+       document.querySelectorAll('.ayah-number.playing, .quran-word.playing').forEach(el => el.classList.remove('playing'));
+     };
 
     const playFromAyah = (ayahIndex) => {
       if (!currentSurah.value || !allAyahs.value.length) return;
@@ -475,50 +480,60 @@ createApp({
         currentAudio = null;
       }
 
-      const playCurrentAyah = () => {
-        if (currentAudio) {
-          currentAudio.pause();
-          currentAudio.src = '';
-          currentAudio = null;
-        }
-        currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
-        
-        if (playMode.value === 'repeat') {
-          const repeatFn = () => {
-            if (isPlaying.value && playingAyahNumber.value === ayah.numberInSurah) {
-              playCurrentAyah();
-            }
-          };
-          currentAudio.addEventListener('ended', repeatFn);
-          currentAudio.addEventListener('error', () => { if (isPlaying.value) repeatFn(); });
-        } else {
-          currentAudio.addEventListener('ended', () => {
-            if (playMode.value === 'continue' && currentPlayingAyahIndex < allAyahs.value.length - 1) {
-              const nextAyah = allAyahs.value[currentPlayingAyahIndex + 1];
-              const nextPageIdx = pages.value.findIndex(page => nextAyah.numberInSurah >= page.startAyah && nextAyah.numberInSurah <= page.endAyah);
-              if (nextPageIdx !== -1 && nextPageIdx !== currentPageIndex.value) {
-                currentPageIndex.value = nextPageIdx;
-                scrollToPage();
-              }
-              playFromAyah(currentPlayingAyahIndex + 1);
-            } else if (playMode.value === 'once') {
-              stopAudio();
-            } else {
-              stopAudio();
-              showToast(isArabic.value ? 'تمت السورة' : 'Surah completed', 'bi bi-check-circle');
-            }
-          });
-          currentAudio.addEventListener('error', () => {
-            if (playMode.value === 'continue' && currentPlayingAyahIndex < allAyahs.value.length - 1) {
-              playFromAyah(currentPlayingAyahIndex + 1);
-            } else {
-              stopAudio();
-            }
-          });
-        }
-        
-        currentAudio.play().catch(() => stopAudio());
-      };
+     const playCurrentAyah = () => {
+         // Clean up any existing audio
+         if (currentAudio) {
+           currentAudio.pause();
+           currentAudio.src = '';
+           currentAudio = null;
+         }
+         
+         currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
+         
+         // Set up event listeners
+         const handleEnded = () => {
+           if (playMode.value === 'repeat') {
+             // Repeat current ayah
+             playCurrentAyah();
+           } else if (playMode.value === 'continue' && currentPlayingAyahIndex < allAyahs.value.length - 1) {
+             // Continue to next ayah
+             const nextAyah = allAyahs.value[currentPlayingAyahIndex + 1];
+             const nextPageIdx = pages.value.findIndex(page => nextAyah.numberInSurah >= page.startAyah && nextAyah.numberInSurah <= page.endAyah);
+             if (nextPageIdx !== -1 && nextPageIdx !== currentPageIndex.value) {
+               currentPageIndex.value = nextPageIdx;
+               scrollToPage();
+             }
+             playFromAyah(currentPlayingAyahIndex + 1);
+           } else {
+             // Stop playback
+             stopAudio();
+             showToast(isArabic.value ? 'تمت السورة' : 'Surah completed', 'bi bi-check-circle');
+           }
+         };
+         
+         const handleError = () => {
+           if (playMode.value === 'continue' && currentPlayingAyahIndex < allAyahs.value.length - 1) {
+             // Try next ayah on error
+             playFromAyah(currentPlayingAyahIndex + 1);
+           } else {
+             stopAudio();
+           }
+         };
+         
+         currentAudio.addEventListener('ended', handleEnded);
+         currentAudio.addEventListener('error', handleError);
+         
+         // Store cleanup function
+         currentAudio._cleanup = () => {
+           currentAudio.removeEventListener('ended', handleEnded);
+           currentAudio.removeEventListener('error', handleError);
+         };
+         
+         currentAudio.play().catch(e => {
+           console.error('Audio play error:', e);
+           stopAudio();
+         });
+       };
 
       playCurrentAyah();
       saveState();
@@ -531,70 +546,77 @@ createApp({
       }, 100);
     };
 
-    const playAyah = (ayahNum) => {
-      if (!currentSurah.value || !allAyahs.value.length) return;
-      const idx = allAyahs.value.findIndex(a => a.numberInSurah === ayahNum);
-      if (idx === -1) return;
-      if (isPlaying.value && playingAyahNumber.value === ayahNum) { stopAudio(); return; }
-      stopAudio();
-      currentPlayingAyahIndex = idx;
-      const ayah = allAyahs.value[idx];
-      playingAyahNumber.value = ayah.numberInSurah;
-      isPlaying.value = true;
-      document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
-      const el = document.querySelector(`.ayah-number[data-ayah="${ayah.numberInSurah}"]`);
-      if (el) el.classList.add('playing');
+     const playAyah = (ayahNum) => {
+       if (!currentSurah.value || !allAyahs.value.length) return;
+       const idx = allAyahs.value.findIndex(a => a.numberInSurah === ayahNum);
+       if (idx === -1) return;
+       if (isPlaying.value && playingAyahNumber.value === ayahNum) { stopAudio(); return; }
+       stopAudio();
+       currentPlayingAyahIndex = idx;
+       const ayah = allAyahs.value[idx];
+       playingAyahNumber.value = ayah.numberInSurah;
+       isPlaying.value = true;
+       document.querySelectorAll('.ayah-number.playing').forEach(el => el.classList.remove('playing'));
+       const el = document.querySelector(`.ayah-number[data-ayah="${ayah.numberInSurah}"]`);
+       if (el) el.classList.add('playing');
 
-      const pageIdx = pages.value.findIndex(p => ayah.numberInSurah >= p.startAyah && ayah.numberInSurah <= p.endAyah);
-      if (pageIdx !== -1 && pageIdx !== currentPageIndex.value) {
-        currentPageIndex.value = pageIdx;
-        scrollToPage();
-      }
+       const pageIdx = pages.value.findIndex(p => ayah.numberInSurah >= p.startAyah && ayah.numberInSurah <= p.endAyah);
+       if (pageIdx !== -1 && pageIdx !== currentPageIndex.value) {
+         currentPageIndex.value = pageIdx;
+         scrollToPage();
+       }
 
-      if (currentAudio) {
-        currentAudio.pause();
-        currentAudio.src = '';
-        currentAudio = null;
-      }
-      currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
+       if (currentAudio) {
+         currentAudio.pause();
+         currentAudio.src = '';
+         currentAudio = null;
+       }
+       currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
 
-      if (playMode.value === 'repeat') {
-        const repeat = () => {
-          if (isPlaying.value && playingAyahNumber.value === ayahNum) {
-            currentAudio = new Audio(getAyahAudioUrl(currentSurah.value, ayah.numberInSurah));
-            currentAudio.addEventListener('ended', repeat);
-            currentAudio.addEventListener('error', () => { if (isPlaying.value) repeat(); });
-            currentAudio.play().catch(() => stopAudio());
-          }
-        };
-        currentAudio.addEventListener('ended', repeat);
-        currentAudio.addEventListener('error', () => { if (isPlaying.value) repeat(); });
-      } else if (playMode.value === 'once') {
-        currentAudio.addEventListener('ended', () => stopAudio());
-        currentAudio.addEventListener('error', () => stopAudio());
-      } else {
-        currentAudio.addEventListener('ended', () => {
-          if (currentPlayingAyahIndex < allAyahs.value.length - 1) {
-            const nextAyah = allAyahs.value[currentPlayingAyahIndex + 1];
-            const nextPageIdx = pages.value.findIndex(p => nextAyah.numberInSurah >= p.startAyah && nextAyah.numberInSurah <= p.endAyah);
-            if (nextPageIdx !== -1 && nextPageIdx !== currentPageIndex.value) {
-              currentPageIndex.value = nextPageIdx;
-              scrollToPage();
-            }
-            playFromAyah(currentPlayingAyahIndex + 1);
-          } else {
-            stopAudio();
-            showToast(isArabic.value ? 'تمت السورة' : 'Surah completed', 'bi bi-check-circle');
-          }
-        });
-        currentAudio.addEventListener('error', () => {
-          if (currentPlayingAyahIndex < allAyahs.value.length - 1) playFromAyah(currentPlayingAyahIndex + 1);
-          else stopAudio();
-        });
-      }
-      
-      currentAudio.play().catch(() => stopAudio());
-    };
+       // Set up event listeners
+       const handleEnded = () => {
+         if (playMode.value === 'repeat') {
+           // Repeat current ayah
+           playAyah(ayahNum);
+         } else if (playMode.value === 'continue' && currentPlayingAyahIndex < allAyahs.value.length - 1) {
+           // Continue to next ayah
+           const nextAyah = allAyahs.value[currentPlayingAyahIndex + 1];
+           const nextPageIdx = pages.value.findIndex(p => nextAyah.numberInSurah >= p.startAyah && nextAyah.numberInSurah <= p.endAyah);
+           if (nextPageIdx !== -1 && nextPageIdx !== currentPageIndex.value) {
+             currentPageIndex.value = nextPageIdx;
+             scrollToPage();
+           }
+           playFromAyah(currentPlayingAyahIndex + 1);
+         } else {
+           // Stop playback
+           stopAudio();
+           showToast(isArabic.value ? 'تمت السورة' : 'Surah completed', 'bi bi-check-circle');
+         }
+       };
+       
+       const handleError = () => {
+         if (playMode.value === 'continue' && currentPlayingAyahIndex < allAyahs.value.length - 1) {
+           // Try next ayah on error
+           playFromAyah(currentPlayingAyahIndex + 1);
+         } else {
+           stopAudio();
+         }
+       };
+       
+       currentAudio.addEventListener('ended', handleEnded);
+       currentAudio.addEventListener('error', handleError);
+       
+       // Store cleanup function
+       currentAudio._cleanup = () => {
+         currentAudio.removeEventListener('ended', handleEnded);
+         currentAudio.removeEventListener('error', handleError);
+       };
+       
+       currentAudio.play().catch(e => {
+         console.error('Audio play error:', e);
+         stopAudio();
+       });
+     };
 
     const playWord = (el) => {
       const audioFile = el.getAttribute('data-audio');
