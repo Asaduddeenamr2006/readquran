@@ -454,49 +454,83 @@ createApp({
       speakingTafsirIndex.value = index;
       isTafsirLoading.value = true;
       
-      // Try Google Translate TTS with ar locale
+      // Use Google Translate TTS (free, works in most browsers)
       const encodedText = encodeURIComponent(cleanText.substring(0, 150));
       const url = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText}`;
       
       const audio = new Audio();
       window.__tafsirAudio = audio;
       
-      audio.addEventListener('canplaythrough', () => {
+      audio.oncanplaythrough = () => {
         isTafsirLoading.value = false;
-        audio.play();
-      });
+        audio.play().catch(() => {
+          // If autoplay fails, try Web Speech API fallback
+          useFallbackSpeech(index, cleanText);
+        });
+      };
       
-      audio.addEventListener('ended', () => {
+      audio.onended = () => {
         if (cleanText.length > 150) {
+          // Play second chunk
           const encodedText2 = encodeURIComponent(cleanText.substring(150));
-          const url2 = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText2}`;
-          audio.src = url2;
+          audio.src = `https://translate.google.com/translate_tts?ie=UTF-8&tl=ar&client=tw-ob&q=${encodedText2}`;
         } else {
           speakingTafsirIndex.value = -1;
           isTafsirLoading.value = false;
           window.__tafsirAudio = null;
         }
-      });
+      };
       
-      audio.addEventListener('error', () => {
-        isTafsirLoading.value = false;
-        // Fallback with optimized male voice settings
-        const utterance = new SpeechSynthesisUtterance(cleanText);
-        utterance.lang = 'ar-SA';
-        utterance.rate = 0.8;
-        utterance.pitch = 0.6;
-        utterance.volume = 1;
-        
-        const voices = speechSynthesis.getVoices();
-        const maleVoice = voices.find(v => v.lang.startsWith('ar'));
-        if (maleVoice) utterance.voice = maleVoice;
-        
-        utterance.onend = () => { speakingTafsirIndex.value = -1; isTafsirLoading.value = false; };
-        utterance.onerror = () => { speakingTafsirIndex.value = -1; isTafsirLoading.value = false; };
-        speechSynthesis.speak(utterance);
-      });
+      audio.onerror = () => {
+        useFallbackSpeech(index, cleanText);
+      };
       
       audio.src = url;
+    };
+    
+    const useFallbackSpeech = (index, text) => {
+      isTafsirLoading.value = false;
+      
+      const chunk = text.substring(0, 200);
+      const utterance = new SpeechSynthesisUtterance(chunk);
+      utterance.lang = 'ar';
+      utterance.rate = 0.9;
+      utterance.pitch = 0.85;
+      utterance.volume = 1;
+      
+      const voices = speechSynthesis.getVoices();
+      const arabicVoice = voices.find(v => v.lang && v.lang.startsWith('ar'));
+      if (arabicVoice) utterance.voice = arabicVoice;
+      
+      utterance.onend = () => {
+        if (text.length > 200 && speakingTafsirIndex.value === index) {
+          const nextChunk = text.substring(200, 400);
+          const nextUtterance = new SpeechSynthesisUtterance(nextChunk);
+          nextUtterance.lang = 'ar';
+          nextUtterance.rate = 0.9;
+          nextUtterance.pitch = 0.85;
+          if (arabicVoice) nextUtterance.voice = arabicVoice;
+          nextUtterance.onend = () => {
+            speakingTafsirIndex.value = -1;
+            isTafsirLoading.value = false;
+          };
+          nextUtterance.onerror = () => {
+            speakingTafsirIndex.value = -1;
+            isTafsirLoading.value = false;
+          };
+          speechSynthesis.speak(nextUtterance);
+        } else {
+          speakingTafsirIndex.value = -1;
+          isTafsirLoading.value = false;
+        }
+      };
+      
+      utterance.onerror = () => {
+        speakingTafsirIndex.value = -1;
+        isTafsirLoading.value = false;
+      };
+      
+      speechSynthesis.speak(utterance);
     };
 
     const stopAudio = () => {
